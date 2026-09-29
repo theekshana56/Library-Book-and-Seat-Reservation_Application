@@ -1,0 +1,15 @@
+package com.biblione.admin.model;
+
+public enum UserRole {
+    ADMIN,
+    STUDENT,
+    UNDERGRADUATE_STUDENT,
+    POSTGRADUATE_STUDENT,
+    LIBRARY_STAFF,
+    ACADEMIC_STAFF,
+    IT_SUPPORT_STAFF,
+    LECTURER,
+    VENDOR,
+    MAINTENANCE_STAFF,
+    UNIVERSITY_MANAGEMENT
+}
