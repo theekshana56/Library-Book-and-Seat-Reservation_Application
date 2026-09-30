@@ -67,5 +67,5 @@ WARNING: Dynamic loading of agents will be disallowed by default in a future rel
   </testcase>
   <testcase name="completingShelvingTaskPublishesBookAndUpdatesShelfCount" classname="com.biblione.admin.service.AdminServiceTest" time="0.017"/>
   <testcase name="shelvingAssignmentMustCoverTheWholeApprovedLot" classname="com.biblione.admin.service.AdminServiceTest" time="0.012"/>
-  <testcase name="shelvingTaskCannotOverfillShelf" classname="com.biblione.admin.service.AdminServiceTest" time="0.004"/>
+  <testcase name="shelvingTaskCannotOverfillShelf" classname="com.biblione.admin.service.AdminServiceTest" time="0.005"/>
 </testsuite>

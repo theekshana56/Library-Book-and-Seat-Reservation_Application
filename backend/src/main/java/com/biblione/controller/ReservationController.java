@@ -5,6 +5,7 @@ import com.biblione.dto.UserBookingsResponse;
 import com.biblione.model.Book;
 import com.biblione.model.Loan;
 import com.biblione.model.Reservation;
+import com.biblione.model.WaitlistEntry;
 import com.biblione.service.BookReservationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,12 @@ public class ReservationController {
     @ResponseStatus(HttpStatus.CREATED)
     public Reservation createReservation(@Valid @RequestBody CreateReservationRequest request) {
         return bookReservationService.reserveBook(request);
+    }
+
+    @PostMapping("/waitlist")
+    @ResponseStatus(HttpStatus.CREATED)
+    public WaitlistEntry joinWaitlist(@Valid @RequestBody CreateReservationRequest request) {
+        return bookReservationService.joinWaitlist(request);
     }
 
     @PostMapping("/reservations/{id}/cancel")

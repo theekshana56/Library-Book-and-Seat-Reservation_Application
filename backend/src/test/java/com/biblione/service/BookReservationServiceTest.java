@@ -5,10 +5,12 @@ import com.biblione.exception.ApiException;
 import com.biblione.model.Book;
 import com.biblione.model.Loan;
 import com.biblione.model.Reservation;
+import com.biblione.model.WaitlistEntry;
 import com.biblione.repository.BookRepository;
 import com.biblione.repository.LoanRepository;
 import com.biblione.repository.ReservationRepository;
 import com.biblione.repository.SeatHoldRepository;
+import com.biblione.repository.WaitlistRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,13 +40,15 @@ class BookReservationServiceTest {
     private LoanRepository loanRepository;
     @Mock
     private SeatHoldRepository seatHoldRepository;
+    @Mock
+    private WaitlistRepository waitlistRepository;
 
     private BookReservationService service;
 
     @BeforeEach
     void setUp() {
         service = new BookReservationService(
-                bookRepository, reservationRepository, loanRepository, seatHoldRepository);
+            bookRepository, reservationRepository, loanRepository, seatHoldRepository, waitlistRepository);
     }
 
     @Test
@@ -55,6 +59,7 @@ class BookReservationServiceTest {
                 .author("Martin Kleppmann")
                 .availableCopies(3)
                 .totalCopies(3)
+                .shelfCode("CS-204")
                 .expressHoldHours(24)
                 .pickupDesk("Central Circulation Desk")
                 .build();
@@ -89,14 +94,56 @@ class BookReservationServiceTest {
     }
 
     @Test
-    void searchBooksHidesAcceptedTitlesUntilShelvingIsComplete() {
+    void unshelvedCopiesAreUnavailableAndCanJoinWaitlist() {
+        Book book = Book.builder().id("book-pending").title("Pending Book")
+            .availableCopies(2).totalCopies(2).waitlistCount(2)
+            .inventoryStatus("PENDING_SHELVING").build();
+        when(bookRepository.findById("book-pending")).thenReturn(Optional.of(book));
+
+        CreateReservationRequest request = new CreateReservationRequest();
+        request.setUserId("u1");
+        request.setBookId("book-pending");
+
+        assertThat(book.isAvailable()).isFalse();
+        assertThatThrownBy(() -> service.reserveBook(request)).isInstanceOf(ApiException.class);
+        when(waitlistRepository.existsByUserIdAndBookIdAndStatus("u1", "book-pending", "WAITING"))
+                .thenReturn(false);
+        when(waitlistRepository.countByBookIdAndStatus("book-pending", "WAITING")).thenReturn(1L);
+        when(waitlistRepository.save(any(WaitlistEntry.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(bookRepository.save(any(Book.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        WaitlistEntry entry = service.joinWaitlist(request);
+
+        assertThat(entry.getQueuePosition()).isEqualTo(3);
+        assertThat(book.getWaitlistCount()).isEqualTo(3);
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void searchBooksIncludesTitlesAwaitingShelving() {
         Book ready = Book.builder().id("book-ready").title("Ready Book").inventoryStatus("AVAILABLE").build();
         Book pending = Book.builder().id("book-pending").title("Pending Book").inventoryStatus("PENDING_SHELVING").build();
         when(bookRepository.findAll()).thenReturn(java.util.List.of(ready, pending));
 
         var results = service.searchBooks("", "");
 
-        assertThat(results).containsExactly(ready);
+        assertThat(results).containsExactly(ready, pending);
+    }
+
+    @Test
+    void searchBooksMatchesPrefixesInsteadOfLettersInsideWords() {
+        Book exactTitle = Book.builder().id("book-exact-title").title("A").build();
+        Book exactAuthor = Book.builder().id("book-exact-author").title("Unknown Exact Author").author("A").build();
+        Book titlePrefix = Book.builder().id("book-alpha").title("A Brief History").build();
+        Book authorPrefix = Book.builder().id("book-author").title("Unknown Title").author("Ada Lovelace").build();
+        Book categoryPrefix = Book.builder().id("book-category").title("Unknown Category Match").category("Astronomy").build();
+        Book containsOnly = Book.builder().id("book-art").title("The Art of Search").build();
+        when(bookRepository.findAll()).thenReturn(
+            java.util.List.of(authorPrefix, categoryPrefix, titlePrefix, exactAuthor, containsOnly, exactTitle));
+
+        var results = service.searchBooks("a", "");
+
+        assertThat(results).containsExactly(exactTitle, exactAuthor, titlePrefix, authorPrefix, categoryPrefix);
     }
 
     @Test

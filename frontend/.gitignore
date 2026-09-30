@@ -10,6 +10,7 @@
 .history
 .svn/
 .swiftpm/
+*.jar
 migrate_working_dir/
 
 # IntelliJ related
@@ -46,3 +47,5 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+/target/
+/build/

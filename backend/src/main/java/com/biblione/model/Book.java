@@ -42,6 +42,7 @@ public class Book {
     private Instant nextReturnDate;
     private String currentBorrower;
     private String coverImageUrl;
+    private String description;
     private String catalogNotice;
     private Integer expressHoldHours;
     private String isbn;
@@ -52,6 +53,8 @@ public class Book {
     private Long version;
 
     public boolean isAvailable() {
-        return availableCopies > 0;
+        return availableCopies > 0
+                && (inventoryStatus == null || !"PENDING_SHELVING".equals(inventoryStatus))
+                && shelfCode != null && !shelfCode.isBlank();
     }
 }
