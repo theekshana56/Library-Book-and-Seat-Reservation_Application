@@ -8,31 +8,35 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "seat_holds")
-public class SeatHold {
+@Document(collection = "seats")
+public class Seat {
 
     @Id
     private String id;
 
-    @Indexed
-    private String userId;
+    @NotBlank
+    @Indexed(unique = true)
     private String seatCode;
-    private String seatName;
+
+    @NotBlank
+    private String hallCode;
+
+    @NotBlank
+    private String floor;
+
+    @NotBlank
     private String zone;
-    private String slotLabel;
-    private LocalDate date;
-    private LocalTime startTime;
-    private Integer durationMinutes;
-    private List<String> amenities;
-    private Instant checkInBy;
-    private String status;
+    private boolean hasPowerOutlet;
+
+    @Min(0)
+    private int acousticsDb;
+    private List<String> features;
 }
