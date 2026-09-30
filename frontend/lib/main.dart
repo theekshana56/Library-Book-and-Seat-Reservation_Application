@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'admin/screens/admin_dashboard_screen.dart';
 import 'debug_agent_log.dart';
+import 'seat_recommender/screens/find_seat_screen.dart';
 import 'screens/MyBookingsScreen.dart';
 import 'screens/SearchCatalogScreen.dart';
 import 'theme/app_theme.dart';
@@ -69,10 +70,7 @@ class _BiblioneShellState extends State<BiblioneShell> {
         title: 'Home',
         subtitle: 'Welcome back to the university library.',
       ),
-      const _PlaceholderPage(
-        title: 'Seats',
-        subtitle: 'Quiet pods and reading desks.',
-      ),
+      FindSeatScreen(onBack: () => setState(() => _index = 2)),
       const SearchCatalogScreen(),
       const MyBookingsScreen(),
       _PlaceholderPage(

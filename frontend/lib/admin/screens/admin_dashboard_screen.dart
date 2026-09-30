@@ -7,6 +7,7 @@ import '../widgets/admin_widgets.dart';
 import 'admin_proposal_review_screen.dart';
 import 'publisher_proposal_form_screen.dart';
 import 'shelf_management_screen.dart';
+import 'space_management_screen.dart';
 import 'staff_task_assignment_screen.dart';
 import 'staff_task_dashboard_screen.dart';
 import 'user_management_screen.dart';
@@ -219,6 +220,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         'Organize capacity and zones',
         Icons.shelves,
         const ShelfManagementScreen(),
+      ),
+      _WorkspaceItem(
+        'Seats & halls',
+        'Register library spaces',
+        Icons.event_seat_outlined,
+        const SpaceManagementScreen(),
       ),
       _WorkspaceItem(
         'Vendor portal',
