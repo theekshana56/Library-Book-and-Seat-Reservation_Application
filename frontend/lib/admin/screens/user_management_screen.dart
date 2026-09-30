@@ -182,18 +182,21 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     if (role != null) setState(() => _role = role);
                   },
                 ),
-                SwitchListTile.adaptive(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    'Account active',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
+                Material(
+                  color: Colors.transparent,
+                  child: SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      'Account active',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
+                    value: _active,
+                    activeTrackColor: AppColors.emerald,
+                    onChanged: (value) => setState(() => _active = value),
                   ),
-                  value: _active,
-                  activeTrackColor: AppColors.emerald,
-                  onChanged: (value) => setState(() => _active = value),
                 ),
                 const SizedBox(height: 6),
                 SizedBox(

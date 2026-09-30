@@ -12,14 +12,16 @@ import '../widgets/ui_kit.dart';
 import 'BookDetailsScreen.dart';
 
 class SearchCatalogScreen extends StatefulWidget {
-  const SearchCatalogScreen({super.key});
+  const SearchCatalogScreen({super.key, this.apiClient});
+
+  final ApiClient? apiClient;
 
   @override
   State<SearchCatalogScreen> createState() => _SearchCatalogScreenState();
 }
 
 class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.apiClient ?? ApiClient();
   final _controller = TextEditingController();
   Timer? _searchDebounce;
   int _searchRequestId = 0;
