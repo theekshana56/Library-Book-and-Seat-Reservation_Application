@@ -28,11 +28,17 @@ class ApiClient {
     }
   }
 
-  Future<List<Book>> searchBooks({String query = '', String category = ''}) async {
-    final uri = Uri.parse('$baseUrl/api/v1/books').replace(queryParameters: {
-      if (query.isNotEmpty) 'query': query,
-      if (category.isNotEmpty && category != 'All Topics') 'category': category,
-    });
+  Future<List<Book>> searchBooks({
+    String query = '',
+    String category = '',
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/books').replace(
+      queryParameters: {
+        if (query.isNotEmpty) 'query': query,
+        if (category.isNotEmpty && category != 'All Topics')
+          'category': category,
+      },
+    );
     final res = await http.get(uri);
     _ensureOk(res);
     final list = jsonDecode(res.body) as List;
@@ -61,13 +67,28 @@ class ApiClient {
     return Reservation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
+  Future<int> joinWaitlist(String bookId) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/api/v1/waitlist'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'userId': demoUserId, 'bookId': bookId}),
+    );
+    _ensureOk(res);
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    return body['queuePosition'] as int;
+  }
+
   Future<void> cancelReservation(String id) async {
-    final res = await http.post(Uri.parse('$baseUrl/api/v1/reservations/$id/cancel'));
+    final res = await http.post(
+      Uri.parse('$baseUrl/api/v1/reservations/$id/cancel'),
+    );
     _ensureOk(res);
   }
 
   Future<UserBookings> getBookings() async {
-    final res = await http.get(Uri.parse('$baseUrl/api/v1/users/$demoUserId/bookings'));
+    final res = await http.get(
+      Uri.parse('$baseUrl/api/v1/users/$demoUserId/bookings'),
+    );
     _ensureOk(res);
     return UserBookings.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
@@ -82,7 +103,9 @@ class ApiClient {
     if (res.statusCode >= 200 && res.statusCode < 300) return;
     try {
       final body = jsonDecode(res.body);
-      throw ApiException(body['message']?.toString() ?? 'Request failed (${res.statusCode})');
+      throw ApiException(
+        body['message']?.toString() ?? 'Request failed (${res.statusCode})',
+      );
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException('Unable to reach Biblione API at $baseUrl');

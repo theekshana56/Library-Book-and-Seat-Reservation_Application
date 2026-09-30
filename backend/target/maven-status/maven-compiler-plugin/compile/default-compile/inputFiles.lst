@@ -33,8 +33,10 @@ D:\HCI APP DeV\Library-Book-and-Seat-Reservation_Application\backend\src\main\ja
 D:\HCI APP DeV\Library-Book-and-Seat-Reservation_Application\backend\src\main\java\com\biblione\model\Loan.java
 D:\HCI APP DeV\Library-Book-and-Seat-Reservation_Application\backend\src\main\java\com\biblione\model\Reservation.java
 D:\HCI APP DeV\Library-Book-and-Seat-Reservation_Application\backend\src\main\java\com\biblione\model\SeatHold.java
+D:\HCI APP DeV\Library-Book-and-Seat-Reservation_Application\backend\src\main\java\com\biblione\model\WaitlistEntry.java
 D:\HCI APP DeV\Library-Book-and-Seat-Reservation_Application\backend\src\main\java\com\biblione\repository\BookRepository.java
 D:\HCI APP DeV\Library-Book-and-Seat-Reservation_Application\backend\src\main\java\com\biblione\repository\LoanRepository.java
 D:\HCI APP DeV\Library-Book-and-Seat-Reservation_Application\backend\src\main\java\com\biblione\repository\ReservationRepository.java
 D:\HCI APP DeV\Library-Book-and-Seat-Reservation_Application\backend\src\main\java\com\biblione\repository\SeatHoldRepository.java
+D:\HCI APP DeV\Library-Book-and-Seat-Reservation_Application\backend\src\main\java\com\biblione\repository\WaitlistRepository.java
 D:\HCI APP DeV\Library-Book-and-Seat-Reservation_Application\backend\src\main\java\com\biblione\service\BookReservationService.java

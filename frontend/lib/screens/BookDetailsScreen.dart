@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../api/api_client.dart';
+import '../admin/controllers/admin_api_client.dart';
+import '../admin/models/admin_models.dart';
 import '../models/book.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
@@ -19,9 +21,12 @@ class BookDetailsScreen extends StatefulWidget {
 
 class _BookDetailsScreenState extends State<BookDetailsScreen> {
   final _api = ApiClient();
+  final _adminApi = AdminApiClient();
   Book? _book;
+  List<LibraryShelf> _shelves = [];
   bool _loading = true;
   bool _summaryExpanded = false;
+  bool _joiningWaitlist = false;
 
   @override
   void initState() {
@@ -33,13 +38,48 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   Future<void> _load() async {
     try {
       final book = await _api.getBook(widget.bookId);
+      var shelves = <LibraryShelf>[];
+      try {
+        shelves = await _adminApi.getShelves();
+      } catch (_) {}
       if (!mounted) return;
       setState(() {
         _book = book;
+        _shelves = shelves;
         _loading = false;
       });
     } catch (_) {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  LibraryShelf? _assignedShelf(Book book) {
+    for (final shelf in _shelves) {
+      if (shelf.shelfCode.trim().toLowerCase() ==
+          book.shelfCode.trim().toLowerCase()) {
+        return shelf;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _joinWaitlist(Book book) async {
+    setState(() => _joiningWaitlist = true);
+    try {
+      final position = await _api.joinWaitlist(book.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('You joined the waitlist at position $position.'),
+        ),
+      );
+      await _load();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) setState(() => _joiningWaitlist = false);
     }
   }
 
@@ -69,10 +109,14 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                   _infoGrid(book),
                   const SizedBox(height: 14),
                   PrimaryButton(
-                    label: book.isAvailable ? 'Reserve Book' : 'Not Available',
+                    label: _joiningWaitlist
+                        ? 'Joining Waitlist...'
+                        : book.isAvailable
+                        ? 'Reserve Book'
+                        : 'Join Waitlist',
                     trailing: book.isAvailable
                         ? Icons.arrow_forward_rounded
-                        : Icons.lock_outline,
+                        : Icons.notifications_active_outlined,
                     onPressed: book.isAvailable
                         ? () => Navigator.push(
                             context,
@@ -81,7 +125,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                   ConfirmReservationScreen(book: book),
                             ),
                           )
-                        : null,
+                        : _joiningWaitlist
+                        ? null
+                        : () => _joinWaitlist(book),
                   ),
                   const SizedBox(height: 14),
                   _wayfinding(book),
@@ -175,6 +221,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   }
 
   Widget _hero(Book book) {
+    final shelf = _assignedShelf(book);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -238,7 +285,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        book.shelfLabel,
+                        shelf == null
+                            ? 'Shelf assignment pending'
+                            : 'Shelf ${shelf.shelfCode} • ${shelf.level}, ${shelf.zone}',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -266,7 +315,12 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
               borderRadius: BorderRadius.circular(22),
             ),
             child: Text(
-              book.isAvailable ? '●  AVAILABLE NOW' : '●  IN CIRCULATION',
+              book.isAvailable
+                  ? '●  AVAILABLE NOW'
+                  : book.inventoryStatus == 'PENDING_SHELVING' ||
+                        book.shelfCode.trim().isEmpty
+                  ? '●  AWAITING SHELVING'
+                  : '●  IN CIRCULATION',
               textAlign: TextAlign.center,
               style: GoogleFonts.plusJakartaSans(
                 color: AppColors.mintText,
@@ -334,6 +388,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   }
 
   Widget _wayfinding(Book book) {
+    final shelf = _assignedShelf(book);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -364,9 +419,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                   ),
                 ),
                 Text(
-                  book.wayfinding.isEmpty
-                      ? 'Level 2 • East Wing Aisle 8'
-                      : book.wayfinding,
+                  shelf == null
+                      ? 'Location will appear once a shelf is assigned.'
+                      : '${shelf.level} • ${shelf.zone}',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 12,
                     color: AppColors.textMuted,

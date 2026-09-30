@@ -53,6 +53,8 @@ public class Book {
     private Long version;
 
     public boolean isAvailable() {
-        return availableCopies > 0;
+        return availableCopies > 0
+                && (inventoryStatus == null || !"PENDING_SHELVING".equals(inventoryStatus))
+                && shelfCode != null && !shelfCode.isBlank();
     }
 }
