@@ -8,6 +8,7 @@ import 'package:http/testing.dart';
 import 'package:biblione/admin/controllers/admin_api_client.dart';
 import 'package:biblione/admin/screens/admin_proposal_review_screen.dart';
 import 'package:biblione/admin/screens/publisher_proposal_form_screen.dart';
+import 'package:biblione/api/api_client.dart';
 import 'package:biblione/debug_agent_log.dart';
 import 'package:biblione/main.dart';
 import 'package:biblione/models/book.dart';
@@ -15,7 +16,10 @@ import 'package:biblione/screens/SearchCatalogScreen.dart';
 
 class FakeApiClient extends ApiClient {
   @override
-  Future<List<Book>> searchBooks({String query = '', String category = ''}) async {
+  Future<List<Book>> searchBooks({
+    String query = '',
+    String category = '',
+  }) async {
     await Future<void>.delayed(const Duration(milliseconds: 200));
     return const [];
   }
@@ -27,9 +31,15 @@ void main() {
   ) async {
     final fakeApi = FakeApiClient();
 
-    await tester.pumpWidget(MaterialApp(home: SearchCatalogScreen(apiClient: fakeApi)));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: SearchCatalogScreen(apiClient: fakeApi)),
+      ),
+    );
     await tester.pump();
-    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: SizedBox())),
+    );
     await tester.pump(const Duration(milliseconds: 250));
 
     expect(tester.takeException(), isNull);
