@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 
 import '../api/api_client.dart';
 import '../models/book.dart';
@@ -22,6 +21,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   final _api = ApiClient();
   Book? _book;
   bool _loading = true;
+  bool _summaryExpanded = false;
 
   @override
   void initState() {
@@ -33,12 +33,13 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   Future<void> _load() async {
     try {
       final book = await _api.getBook(widget.bookId);
+      if (!mounted) return;
       setState(() {
         _book = book;
         _loading = false;
       });
     } catch (_) {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -61,6 +62,8 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 children: [
                   _hero(book),
                   const SizedBox(height: 14),
+                  _bookSummary(book),
+                  const SizedBox(height: 14),
                   _stock(book),
                   const SizedBox(height: 12),
                   _infoGrid(book),
@@ -82,23 +85,90 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                   ),
                   const SizedBox(height: 14),
                   _wayfinding(book),
-                  const SizedBox(height: 22),
-                  Center(
-                    child: Text(
-                      'STATE VARIATIONS',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11,
-                        letterSpacing: 1.6,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  _altState(book),
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _bookSummary(Book book) {
+    final summary = book.description?.trim();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE4EAF1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.notes_rounded,
+                size: 18,
+                color: AppColors.emerald,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'BOOK SUMMARY',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.7,
+                  color: AppColors.emerald,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (summary == null || summary.isEmpty)
+            Text(
+              'A summary is not available for this title yet.',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                height: 1.5,
+                color: AppColors.textMuted,
+              ),
+            )
+          else ...[
+            Text(
+              summary,
+              maxLines: _summaryExpanded ? null : 5,
+              overflow: _summaryExpanded
+                  ? TextOverflow.visible
+                  : TextOverflow.ellipsis,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                height: 1.55,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            if (summary.length > 260)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () =>
+                      setState(() => _summaryExpanded = !_summaryExpanded),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.only(top: 6),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    _summaryExpanded ? 'Show less' : 'Read more',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: AppColors.emerald,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ],
       ),
     );
@@ -314,139 +384,6 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 fontWeight: FontWeight.w800,
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _altState(Book book) {
-    final due = book.nextReturnDate ?? DateTime(2025, 5, 18);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE4EAF1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.circle, size: 10, color: Color(0xFF94A3B8)),
-              const SizedBox(width: 8),
-              Text(
-                'Alternative State',
-                style: GoogleFonts.plusJakartaSans(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.ice,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'IF CHECKED OUT',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.checkedText,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.wayfinding,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.schedule,
-                      size: 16,
-                      color: AppColors.checkedText,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'All Copies Currently in Circulation',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Next estimated return: ${DateFormat('MMMM d, y').format(due)}\n(Borrower:\n${book.currentBorrower ?? 'Department of CS'})',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Icon(
-                Icons.groups_outlined,
-                size: 16,
-                color: AppColors.textMuted,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  '${book.waitlistCount == 0 ? 4 : book.waitlistCount} patrons waiting on hold list',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                'Est. wait: ~2 weeks',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.checkedText,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SoftButton(
-            label: 'Not Available (Due ${DateFormat('MMM d').format(due)})',
-            icon: Icons.lock_outline,
-            onPressed: null,
-          ),
-          const SizedBox(height: 8),
-          SoftButton(
-            label: 'Join Waitlist & Notify Me',
-            icon: Icons.notifications_active_outlined,
-            foreground: AppColors.emerald,
-            onPressed: () {},
           ),
         ],
       ),

@@ -42,6 +42,7 @@ public class Book {
     private Instant nextReturnDate;
     private String currentBorrower;
     private String coverImageUrl;
+    private String description;
     private String catalogNotice;
     private Integer expressHoldHours;
     private String isbn;

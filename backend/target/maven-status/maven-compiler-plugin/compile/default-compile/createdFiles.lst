@@ -24,4 +24,5 @@ com\biblione\admin\repository\StaffTaskRepository.class
 com\biblione\admin\dto\UpdateTaskStatusRequest.class
 com\biblione\admin\model\Shelf.class
 com\biblione\admin\dto\CreateProposalRequest.class
+com\biblione\config\DatabaseSeeder.class
 com\biblione\admin\model\Shelf$ShelfBuilder.class
