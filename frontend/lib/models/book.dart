@@ -20,6 +20,7 @@ class Book {
   final DateTime? nextReturnDate;
   final String? currentBorrower;
   final String coverImageUrl;
+  final String? description;
   final String? catalogNotice;
   final int? expressHoldHours;
 
@@ -45,6 +46,7 @@ class Book {
     this.nextReturnDate,
     this.currentBorrower,
     required this.coverImageUrl,
+    this.description,
     this.catalogNotice,
     this.expressHoldHours,
   });
@@ -94,6 +96,7 @@ class Book {
           : null,
       currentBorrower: json['currentBorrower'],
       coverImageUrl: json['coverImageUrl'] ?? '',
+      description: json['description']?.toString(),
       catalogNotice: json['catalogNotice'],
       expressHoldHours: json['expressHoldHours'],
     );
