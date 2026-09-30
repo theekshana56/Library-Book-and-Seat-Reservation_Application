@@ -8,4 +8,6 @@ import java.util.List;
 public interface SeatHoldRepository extends MongoRepository<SeatHold, String> {
 
     List<SeatHold> findByUserIdAndStatus(String userId, String status);
+
+    List<SeatHold> findByStatusIn(List<String> statuses);
 }

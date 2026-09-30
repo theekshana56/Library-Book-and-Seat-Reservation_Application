@@ -1,16 +1,20 @@
 package com.biblione.admin.controller;
 
 import com.biblione.admin.dto.AdminStatsResponse;
+import com.biblione.admin.dto.CreateHallRequest;
+import com.biblione.admin.dto.CreateSeatRequest;
 import com.biblione.admin.dto.CreateTaskRequest;
 import com.biblione.admin.dto.CreateUserRequest;
 import com.biblione.admin.dto.UpdateTaskStatusRequest;
 import com.biblione.admin.dto.UpdateUserStatusRequest;
 import com.biblione.admin.model.AdminUser;
+import com.biblione.admin.model.Hall;
 import com.biblione.admin.model.Shelf;
 import com.biblione.admin.model.StaffTask;
 import com.biblione.admin.model.UserRole;
 import com.biblione.admin.service.AdminService;
 import com.biblione.model.Book;
+import com.biblione.model.Seat;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -95,5 +99,27 @@ public class AdminController {
     @PutMapping("/shelves/{id}")
     public Shelf updateShelf(@PathVariable String id, @Valid @RequestBody Shelf shelf) {
         return adminService.updateShelf(id, shelf);
+    }
+
+    @PostMapping("/halls")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Hall createHall(@Valid @RequestBody CreateHallRequest request) {
+        return adminService.createHall(request);
+    }
+
+    @GetMapping("/halls")
+    public List<Hall> getHalls() {
+        return adminService.getHalls();
+    }
+
+    @PostMapping("/seats")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Seat createSeat(@Valid @RequestBody CreateSeatRequest request) {
+        return adminService.createSeat(request);
+    }
+
+    @GetMapping("/seats")
+    public List<Seat> getSeats() {
+        return adminService.getSeats();
     }
 }
