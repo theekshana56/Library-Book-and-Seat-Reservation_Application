@@ -14,6 +14,7 @@ com\biblione\admin\dto\CreateUserRequest.class
 com\biblione\admin\config\AdminSecurityConfig.class
 com\biblione\admin\controller\ProposalController.class
 com\biblione\admin\model\StaffTask$StaffTaskBuilder.class
+com\biblione\model\WaitlistEntry.class
 com\biblione\admin\dto\CreateTaskRequest.class
 com\biblione\admin\model\AdminUser$AdminUserBuilder.class
 com\biblione\BiblioneApplication.class
@@ -24,6 +25,7 @@ com\biblione\admin\model\PublisherProposal$PublisherProposalBuilder.class
 com\biblione\controller\ReservationController.class
 com\biblione\repository\LoanRepository.class
 com\biblione\admin\dto\ReviewProposalRequest.class
+com\biblione\model\WaitlistEntry$WaitlistEntryBuilder.class
 com\biblione\admin\model\StaffTask.class
 com\biblione\model\SeatHold.class
 com\biblione\repository\SeatHoldRepository.class

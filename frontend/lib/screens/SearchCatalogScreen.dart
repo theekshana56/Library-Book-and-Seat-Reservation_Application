@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -10,17 +12,22 @@ import '../widgets/ui_kit.dart';
 import 'BookDetailsScreen.dart';
 
 class SearchCatalogScreen extends StatefulWidget {
-  const SearchCatalogScreen({super.key});
+  const SearchCatalogScreen({super.key, this.apiClient});
+
+  final ApiClient? apiClient;
 
   @override
   State<SearchCatalogScreen> createState() => _SearchCatalogScreenState();
 }
 
 class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.apiClient ?? ApiClient();
   final _controller = TextEditingController();
-  final _categories = const ['All Topics', 'Computer Science', 'Software Eng'];
+  Timer? _searchDebounce;
+  int _searchRequestId = 0;
+  List<String> _categories = const ['All Topics'];
   String _category = 'All Topics';
+  String _availabilityFilter = 'All';
   List<Book> _books = [];
   bool _loading = true;
   String? _error;
@@ -29,10 +36,31 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
   void initState() {
     super.initState();
     _load();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final books = await _api.searchBooks();
+      final categories =
+          books
+              .map((book) => book.category.trim())
+              .where((category) => category.isNotEmpty)
+              .toSet()
+              .toList()
+            ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      if (!mounted) return;
+      setState(() {
+        _categories = ['All Topics', ...categories];
+        if (!_categories.contains(_category)) _category = 'All Topics';
+      });
+    } catch (_) {}
   }
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    _controller.dispose();
     // #region agent log
     agentDebugLog(
       location: 'SearchCatalogScreen.dart:dispose',
@@ -45,6 +73,9 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
   }
 
   Future<void> _load() async {
+    _searchDebounce?.cancel();
+    _searchDebounce = null;
+    final requestId = ++_searchRequestId;
     setState(() {
       _loading = true;
       _error = null;
@@ -54,11 +85,13 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
         query: _controller.text,
         category: _category,
       );
+      if (!mounted || requestId != _searchRequestId) return;
       setState(() {
         _books = books;
         _loading = false;
       });
     } catch (e) {
+      if (!mounted || requestId != _searchRequestId) return;
       setState(() {
         _error = e.toString();
         _loading = false;
@@ -68,6 +101,12 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final visibleBooks = _books.where((book) {
+      if (_availabilityFilter == 'Available') return book.isAvailable;
+      if (_availabilityFilter == 'Checked out') return !book.isAvailable;
+      return true;
+    }).toList();
+
     return Column(
       children: [
         NavyAppHeader(
@@ -150,7 +189,7 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
                     child: Row(
                       children: [
                         Text(
-                          '${_books.length} RESULTS',
+                          '${visibleBooks.length} RESULTS',
                           style: GoogleFonts.plusJakartaSans(
                             fontWeight: FontWeight.w800,
                             fontSize: 12,
@@ -171,18 +210,40 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
                       ],
                     ),
                   ),
-                  const Icon(
-                    Icons.tune_rounded,
-                    size: 18,
-                    color: AppColors.emerald,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Filters',
-                    style: GoogleFonts.plusJakartaSans(
-                      color: AppColors.emerald,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
+                  PopupMenuButton<String>(
+                    tooltip: 'Filter by availability',
+                    initialValue: _availabilityFilter,
+                    onSelected: (filter) =>
+                        setState(() => _availabilityFilter = filter),
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'All', child: Text('All books')),
+                      PopupMenuItem(
+                        value: 'Available',
+                        child: Text('Available now'),
+                      ),
+                      PopupMenuItem(
+                        value: 'Checked out',
+                        child: Text('Checked out'),
+                      ),
+                    ],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.tune_rounded,
+                          size: 18,
+                          color: AppColors.emerald,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Filters',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: AppColors.emerald,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -204,7 +265,12 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
                     ),
                   ),
                 ),
-              ..._books.map(_bookCard),
+              if (!_loading && _error == null && visibleBooks.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 28),
+                  child: Center(child: Text('No books match these filters.')),
+                ),
+              ...visibleBooks.map(_bookCard),
             ],
           ),
         ),
@@ -246,19 +312,16 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
       ),
       child: TextField(
         controller: _controller,
+        onChanged: (_) {
+          _searchDebounce?.cancel();
+          _searchDebounce = Timer(const Duration(milliseconds: 300), _load);
+        },
         onSubmitted: (_) => _load(),
         decoration: InputDecoration(
           hintText: 'Search catalog',
           prefixIcon: const Icon(
             Icons.search_rounded,
             color: AppColors.textMuted,
-          ),
-          suffixIcon: IconButton(
-            icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
-            onPressed: () {
-              _controller.clear();
-              _load();
-            },
           ),
           filled: true,
           fillColor: AppColors.searchFill,
@@ -343,13 +406,18 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
                             ],
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            book.title,
+                          Text.rich(
+                            _highlightPrefix(book.title),
                             style: AppTheme.serifTitle.copyWith(fontSize: 18),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            '${book.author}  •  ${book.edition}',
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                _highlightPrefix(book.author),
+                                TextSpan(text: '  •  ${book.edition}'),
+                              ],
+                            ),
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 12,
                               color: AppColors.textMuted,
@@ -451,6 +519,27 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  TextSpan _highlightPrefix(String value) {
+    final query = _controller.text.trim();
+    if (query.isEmpty || !value.toLowerCase().startsWith(query.toLowerCase())) {
+      return TextSpan(text: value);
+    }
+
+    return TextSpan(
+      children: [
+        TextSpan(
+          text: value.substring(0, query.length),
+          style: const TextStyle(
+            color: AppColors.emerald,
+            fontWeight: FontWeight.w800,
+            backgroundColor: Color(0xFFD7F2EA),
+          ),
+        ),
+        TextSpan(text: value.substring(query.length)),
+      ],
     );
   }
 

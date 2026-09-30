@@ -80,6 +80,7 @@ public class PublisherProposalService {
                     .waitlistCount(0)
                     .loanPeriodDays(14)
                     .coverImageUrl(proposal.getSampleCoverImageUrl())
+                    .description(proposal.getDescription())
                     .isbn(proposal.getIsbn())
                     .inventoryStatus("PENDING_SHELVING")
                     .proposalId(proposal.getId())
