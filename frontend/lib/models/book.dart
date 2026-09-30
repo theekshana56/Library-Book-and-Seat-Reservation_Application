@@ -17,6 +17,7 @@ class Book {
   final int totalCopies;
   final int availableCopies;
   final int waitlistCount;
+  final String? inventoryStatus;
   final DateTime? nextReturnDate;
   final String? currentBorrower;
   final String coverImageUrl;
@@ -43,6 +44,7 @@ class Book {
     required this.totalCopies,
     required this.availableCopies,
     required this.waitlistCount,
+    this.inventoryStatus,
     this.nextReturnDate,
     this.currentBorrower,
     required this.coverImageUrl,
@@ -51,7 +53,10 @@ class Book {
     this.expressHoldHours,
   });
 
-  bool get isAvailable => availableCopies > 0;
+  bool get isAvailable =>
+      availableCopies > 0 &&
+      inventoryStatus != 'PENDING_SHELVING' &&
+      shelfCode.trim().isNotEmpty;
 
   String get shelfLabel => 'Shelf $shelfCode • $shelfDetail';
 
@@ -65,8 +70,18 @@ class Book {
     final d = nextReturnDate;
     if (d == null) return 'soon';
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[d.month - 1]} ${d.day}';
   }
@@ -86,11 +101,13 @@ class Book {
       shelfDetail: json['shelfDetail'] ?? '',
       wayfinding: json['wayfinding'] ?? '',
       pickupDesk: json['pickupDesk'] ?? 'Central Circulation Desk',
-      pickupDeskDetail: json['pickupDeskDetail'] ?? 'Level 1, East Atrium Entrance',
+      pickupDeskDetail:
+          json['pickupDeskDetail'] ?? 'Level 1, East Atrium Entrance',
       loanPeriodDays: json['loanPeriodDays'] ?? 14,
       totalCopies: json['totalCopies'] ?? 0,
       availableCopies: json['availableCopies'] ?? 0,
       waitlistCount: json['waitlistCount'] ?? 0,
+      inventoryStatus: json['inventoryStatus']?.toString(),
       nextReturnDate: json['nextReturnDate'] != null
           ? DateTime.tryParse(json['nextReturnDate'].toString())
           : null,
