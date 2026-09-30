@@ -2,18 +2,23 @@ package com.biblione.admin.service;
 
 import com.biblione.admin.dto.UpdateTaskStatusRequest;
 import com.biblione.admin.dto.CreateTaskRequest;
+import com.biblione.admin.dto.CreateHallRequest;
+import com.biblione.admin.dto.CreateSeatRequest;
 import com.biblione.admin.model.AdminUser;
+import com.biblione.admin.model.Hall;
 import com.biblione.admin.model.Shelf;
 import com.biblione.admin.model.StaffTask;
 import com.biblione.admin.model.TaskStatus;
 import com.biblione.admin.model.UserRole;
 import com.biblione.admin.repository.AdminUserRepository;
+import com.biblione.admin.repository.HallRepository;
 import com.biblione.admin.repository.PublisherProposalRepository;
 import com.biblione.admin.repository.ShelfRepository;
 import com.biblione.admin.repository.StaffTaskRepository;
 import com.biblione.exception.ApiException;
 import com.biblione.model.Book;
 import com.biblione.repository.BookRepository;
+import com.biblione.repository.SeatRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -43,6 +48,10 @@ class AdminServiceTest {
     private ShelfRepository shelfRepository;
     @Mock
     private BookRepository bookRepository;
+        @Mock
+        private SeatRepository seatRepository;
+        @Mock
+        private HallRepository hallRepository;
     @Mock
     private PasswordEncoder passwordEncoder;
 
@@ -131,4 +140,37 @@ class AdminServiceTest {
         assertThat(book.getWayfinding()).isEqualTo("Level 2 • North Wing");
         assertThat(task.getTargetShelfCode()).isEqualTo("CS-205");
     }
+
+        @Test
+        void createHallNormalizesCodeAndRejectsDuplicate() {
+                when(hallRepository.findByHallCodeIgnoreCase("NORTH")).thenReturn(Optional.empty());
+                when(hallRepository.save(any(Hall.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+                Hall hall = service.createHall(new CreateHallRequest(" north ", "North Library", "Main Campus", 3, "Quiet study"));
+
+                assertThat(hall.getHallCode()).isEqualTo("NORTH");
+                assertThat(hall.getFloorCount()).isEqualTo(3);
+                when(hallRepository.findByHallCodeIgnoreCase("NORTH")).thenReturn(Optional.of(hall));
+                assertThatThrownBy(() -> service.createHall(new CreateHallRequest("NORTH", "Other", "Main Campus", 1, null)))
+                                .isInstanceOf(ApiException.class);
+        }
+
+        @Test
+        void createSeatRequiresHallAndStoresRecommenderFeatures() {
+                Hall hall = Hall.builder().hallCode("NORTH").name("North Library").build();
+                when(seatRepository.findBySeatCodeIgnoreCase("A04")).thenReturn(Optional.empty());
+                when(hallRepository.findByHallCodeIgnoreCase("NORTH")).thenReturn(Optional.of(hall));
+                when(seatRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+                var seat = service.createSeat(new CreateSeatRequest(
+                                "a04", "north", "Level 2", "Quiet Zone", true, 24, java.util.List.of(" power ", "window", "")));
+
+                assertThat(seat.getSeatCode()).isEqualTo("A04");
+                assertThat(seat.getHallCode()).isEqualTo("NORTH");
+                assertThat(seat.getFeatures()).containsExactly("power", "window");
+                when(hallRepository.findByHallCodeIgnoreCase("MISSING")).thenReturn(Optional.empty());
+                assertThatThrownBy(() -> service.createSeat(new CreateSeatRequest(
+                                "A05", "MISSING", "Level 2", "Quiet Zone", false, 30, java.util.List.of())))
+                                .isInstanceOf(ApiException.class);
+        }
 }
