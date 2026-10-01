@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'checkin_success_screen.dart';
 
 class QRScannerScreen extends StatelessWidget {
   final String seatNumber;
@@ -279,10 +280,11 @@ class QRScannerScreen extends StatelessWidget {
                     ),
                   ),
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Valid QR detected – success screen next.',
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CheckinSuccessScreen(
+                          seatNumber: seatNumber,
                         ),
                       ),
                     );
