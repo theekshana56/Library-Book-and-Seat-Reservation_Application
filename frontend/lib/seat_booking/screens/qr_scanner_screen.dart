@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'checkin_success_screen.dart';
+import 'qr_error_screen.dart';
 
 class QRScannerScreen extends StatelessWidget {
   final String seatNumber;
@@ -315,10 +316,11 @@ class QRScannerScreen extends StatelessWidget {
                     ),
                   ),
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Invalid QR detected – error screen next.',
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => QRErrorScreen(
+                          seatNumber: seatNumber,
                         ),
                       ),
                     );
