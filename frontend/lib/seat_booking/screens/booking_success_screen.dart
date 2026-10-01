@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'active_booking_screen.dart';
 
 class BookingSuccessScreen extends StatelessWidget {
   final String seatNumber;
@@ -325,10 +326,11 @@ class BookingSuccessScreen extends StatelessWidget {
                     ),
                   ),
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Active Booking screen will open next.',
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ActiveBookingScreen(
+                          seatNumber: seatNumber,
                         ),
                       ),
                     );
