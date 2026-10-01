@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'booking_success_screen.dart';
 
 class ReviewBookingScreen extends StatelessWidget {
@@ -13,83 +14,39 @@ class ReviewBookingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFA),
+
       appBar: AppBar(
         backgroundColor: const Color(0xFF073342),
         foregroundColor: Colors.white,
-        elevation: 0,
-        titleSpacing: 16,
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Biblione',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              'SMART LIBRARY',
-              style: TextStyle(
-                fontSize: 8,
-                letterSpacing: 1.5,
-              ),
-            ),
-          ],
+        title: const Text(
+          'Review Booking',
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_none),
-          ),
-          const Padding(
-            padding: EdgeInsets.only(right: 14),
-            child: CircleAvatar(
-              radius: 16,
-              backgroundColor: Color(0xFF00A087),
-              child: Text(
-                'A',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
+
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
+
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               InkWell(
-                onTap: () {
-                  Navigator.pop(context);
-                },
+                onTap: () => Navigator.pop(context),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.arrow_back_ios_new,
-                      size: 15,
-                      color: Color(0xFF173B46),
-                    ),
+                    Icon(Icons.arrow_back_ios_new, size: 15),
                     SizedBox(width: 5),
-                    Text(
-                      'Back',
-                      style: TextStyle(
-                        color: Color(0xFF173B46),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    Text('Back'),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
 
               const Text(
                 'Review Booking',
@@ -114,41 +71,30 @@ class ReviewBookingScreen extends StatelessWidget {
 
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(17),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [
                       Color(0xFF087E6A),
                       Color(0xFF00A087),
                     ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(18),
                 ),
+
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'SELECTED SEAT',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        Icon(
-                          Icons.chair_alt_outlined,
-                          color: Colors.white,
-                        ),
-                      ],
+                    const Text(
+                      'SELECTED SEAT',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 5),
 
                     Text(
                       seatNumber,
@@ -159,46 +105,11 @@ class ReviewBookingScreen extends StatelessWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 4),
-
                     const Text(
                       'Level 2 Quiet Zone',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
                       ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    const Divider(
-                      color: Colors.white24,
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    const Row(
-                      children: [
-                        Expanded(
-                          child: _HeaderDetail(
-                            label: 'DATE',
-                            value: '18 Sep 2026',
-                          ),
-                        ),
-                        Expanded(
-                          child: _HeaderDetail(
-                            label: 'TIME',
-                            value: '10:00 AM',
-                          ),
-                        ),
-                        Expanded(
-                          child: _HeaderDetail(
-                            label: 'DURATION',
-                            value: '2 Hours',
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
@@ -207,7 +118,6 @@ class ReviewBookingScreen extends StatelessWidget {
               const SizedBox(height: 18),
 
               Container(
-                width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -216,36 +126,53 @@ class ReviewBookingScreen extends StatelessWidget {
                     color: const Color(0xFFE1E8E7),
                   ),
                 ),
+
                 child: Column(
                   children: [
-                    _detailRow(
-                      icon: Icons.calendar_today_outlined,
-                      title: 'Date',
-                      value: 'Friday, 18 September 2026',
+                    _detail(
+                      Icons.calendar_today_outlined,
+                      'Date',
+                      '18 September 2026',
                     ),
-                    const Divider(height: 26),
-                    _detailRow(
-                      icon: Icons.access_time,
-                      title: 'Time',
-                      value: '10:00 AM – 12:00 PM',
+
+                    const Divider(height: 28),
+
+                    _detail(
+                      Icons.access_time,
+                      'Time',
+                      '10:00 AM – 12:00 PM',
                     ),
-                    const Divider(height: 26),
-                    _detailRow(
-                      icon: Icons.location_on_outlined,
-                      title: 'Location',
-                      value: 'Level 2 Quiet Zone, Central Cluster',
+
+                    const Divider(height: 28),
+
+                    _detail(
+                      Icons.timelapse,
+                      'Duration',
+                      '2 Hours',
                     ),
-                    const Divider(height: 26),
-                    _detailRow(
-                      icon: Icons.chair_alt_outlined,
-                      title: 'Seat',
-                      value: '$seatNumber – Window Side',
+
+                    const Divider(height: 28),
+
+                    _detail(
+                      Icons.location_on_outlined,
+                      'Location',
+                      'Level 2 Quiet Zone',
                     ),
-                    const Divider(height: 26),
-                    _detailRow(
-                      icon: Icons.power_outlined,
-                      title: 'Facilities',
-                      value: 'Window View • Power Outlet • LAN',
+
+                    const Divider(height: 28),
+
+                    _detail(
+                      Icons.chair_alt_outlined,
+                      'Seat',
+                      '$seatNumber – Window Side',
+                    ),
+
+                    const Divider(height: 28),
+
+                    _detail(
+                      Icons.power_outlined,
+                      'Facilities',
+                      'Power Outlet • Window View',
                     ),
                   ],
                 ),
@@ -254,7 +181,6 @@ class ReviewBookingScreen extends StatelessWidget {
               const SizedBox(height: 16),
 
               Container(
-                width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEAF7F3),
@@ -265,17 +191,16 @@ class ReviewBookingScreen extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.info_outline,
-                      size: 20,
                       color: Color(0xFF008C72),
                     ),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Check-in Policy\nYou must check in within 15 minutes of your reserved start time. Scan the QR code at your reserved desk.',
+                        'Check in within 15 minutes of your reservation start time using the QR code at your desk.',
                         style: TextStyle(
-                          color: Color(0xFF31545C),
                           fontSize: 11,
                           height: 1.4,
+                          color: Color(0xFF31545C),
                         ),
                       ),
                     ),
@@ -292,25 +217,25 @@ class ReviewBookingScreen extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF008C72),
                     foregroundColor: Colors.white,
-                    elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
+
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => BookingSuccessScreen(
+                        builder: (_) => BookingSuccessScreen(
                           seatNumber: seatNumber,
                         ),
                       ),
                     );
                   },
+
                   child: const Text(
                     'Confirm Booking',
                     style: TextStyle(
-                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -323,26 +248,12 @@ class ReviewBookingScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 46,
                 child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF173B46),
-                    side: const BorderSide(
-                      color: Color(0xFFD6E0DF),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text(
-                    'Change Seat',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Change Seat'),
                 ),
               ),
+
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -350,13 +261,12 @@ class ReviewBookingScreen extends StatelessWidget {
     );
   }
 
-  Widget _detailRow({
-    required IconData icon,
-    required String title,
-    required String value,
-  }) {
+  Widget _detail(
+      IconData icon,
+      String title,
+      String value,
+      ) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: 38,
@@ -367,8 +277,8 @@ class ReviewBookingScreen extends StatelessWidget {
           ),
           child: Icon(
             icon,
-            size: 19,
             color: const Color(0xFF008C72),
+            size: 19,
           ),
         ),
         const SizedBox(width: 12),
@@ -393,42 +303,6 @@ class ReviewBookingScreen extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _HeaderDetail extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _HeaderDetail({
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white60,
-            fontSize: 8,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
           ),
         ),
       ],
