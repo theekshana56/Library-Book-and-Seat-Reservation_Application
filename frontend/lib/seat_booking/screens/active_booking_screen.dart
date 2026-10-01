@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'qr_scanner_screen.dart';
 
 class ActiveBookingScreen extends StatelessWidget {
   final String seatNumber;
@@ -307,10 +308,11 @@ class ActiveBookingScreen extends StatelessWidget {
                     ),
                   ),
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'QR Scanner screen will open next.',
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => QRScannerScreen(
+                          seatNumber: seatNumber,
                         ),
                       ),
                     );
