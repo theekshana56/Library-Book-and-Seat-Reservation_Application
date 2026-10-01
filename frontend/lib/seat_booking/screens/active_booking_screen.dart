@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'active_booking_screen.dart';
 
-class BookingSuccessScreen extends StatelessWidget {
+class ActiveBookingScreen extends StatelessWidget {
   final String seatNumber;
 
-  const BookingSuccessScreen({
+  const ActiveBookingScreen({
     super.key,
     required this.seatNumber,
   });
@@ -13,6 +12,7 @@ class BookingSuccessScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFA),
+
       appBar: AppBar(
         backgroundColor: const Color(0xFF073342),
         foregroundColor: Colors.white,
@@ -61,48 +61,58 @@ class BookingSuccessScreen extends StatelessWidget {
 
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(18, 24, 18, 24),
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 74,
-                height: 74,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE3F7F1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle,
-                  color: Color(0xFF008C72),
-                  size: 54,
+              InkWell(
+                onTap: () => Navigator.pop(context),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.arrow_back_ios_new,
+                      size: 15,
+                      color: Color(0xFF173B46),
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      'Back',
+                      style: TextStyle(
+                        color: Color(0xFF173B46),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
               const SizedBox(height: 16),
 
-              const Text(
-                'Seat Reserved Successfully!',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Color(0xFF0A3443),
-                  fontSize: 23,
-                  fontWeight: FontWeight.w800,
-                ),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'My Booking',
+                    style: TextStyle(
+                      color: Color(0xFF0A3443),
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    'RESERVED',
+                    style: TextStyle(
+                      color: Color(0xFF008C72),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
 
-              const SizedBox(height: 7),
-
-              const Text(
-                'Your desk has been confirmed and reserved for your selected period.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Color(0xFF78868A),
-                  fontSize: 12,
-                  height: 1.4,
-                ),
-              ),
-
-              const SizedBox(height: 22),
+              const SizedBox(height: 18),
 
               Container(
                 width: double.infinity,
@@ -115,9 +125,20 @@ class BookingSuccessScreen extends StatelessWidget {
                   ),
                 ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const Text(
+                      '#LIB-2026-7843',
+                      style: TextStyle(
+                        color: Color(0xFF7A898D),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
                     Container(
-                      width: double.infinity,
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEDF8F4),
@@ -126,8 +147,8 @@ class BookingSuccessScreen extends StatelessWidget {
                       child: Row(
                         children: [
                           Container(
-                            width: 56,
-                            height: 56,
+                            width: 58,
+                            height: 58,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
                               color: const Color(0xFF008C72),
@@ -148,15 +169,6 @@ class BookingSuccessScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'SEAT LOCATION',
-                                  style: TextStyle(
-                                    color: Color(0xFF819094),
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
                                   'Level 2 Quiet Zone',
                                   style: TextStyle(
                                     color: Color(0xFF173B46),
@@ -164,9 +176,9 @@ class BookingSuccessScreen extends StatelessWidget {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                SizedBox(height: 3),
+                                SizedBox(height: 4),
                                 Text(
-                                  'Window Side',
+                                  'Window Side • Power Outlet',
                                   style: TextStyle(
                                     color: Color(0xFF78868A),
                                     fontSize: 11,
@@ -181,105 +193,75 @@ class BookingSuccessScreen extends StatelessWidget {
 
                     const SizedBox(height: 18),
 
-                    _detailRow(
-                      icon: Icons.calendar_today_outlined,
-                      label: 'Date',
-                      value: '18 September 2026',
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '10:00',
+                          style: TextStyle(
+                            color: Color(0xFF173B46),
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '12:00',
+                          style: TextStyle(
+                            color: Color(0xFF173B46),
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
 
-                    const Divider(height: 26),
+                    const SizedBox(height: 7),
 
-                    _detailRow(
-                      icon: Icons.access_time,
-                      label: 'Time Slot',
-                      value: '10:00 AM – 12:00 PM',
-                    ),
-
-                    const Divider(height: 26),
-
-                    _detailRow(
-                      icon: Icons.timelapse,
-                      label: 'Duration',
-                      value: '2 Hours',
-                    ),
-
-                    const Divider(height: 26),
-
-                    _detailRow(
-                      icon: Icons.confirmation_number_outlined,
-                      label: 'Booking ID',
-                      value: '#LIB-2026-7843',
-                    ),
-
-                    const Divider(height: 26),
-
-                    _detailRow(
-                      icon: Icons.power_outlined,
-                      label: 'Facilities',
-                      value: 'Power Outlet • Window View',
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: const Color(0xFFE1E8E7),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      'DIGITAL BOOKING PASS',
-                      style: TextStyle(
-                        color: Color(0xFF7B898D),
-                        fontSize: 9,
-                        letterSpacing: 1,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    Container(
-                      height: 65,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F7F7),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.view_week,
-                          color: Color(0xFF173B46),
-                          size: 54,
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: const LinearProgressIndicator(
+                        value: 0.15,
+                        minHeight: 7,
+                        backgroundColor: Color(0xFFE3EBEA),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFF008C72),
                         ),
                       ),
                     ),
 
                     const SizedBox(height: 8),
 
-                    const Text(
-                      'LIB-2026-7843',
-                      style: TextStyle(
-                        color: Color(0xFF173B46),
-                        fontSize: 10,
-                        letterSpacing: 2,
-                        fontWeight: FontWeight.w600,
+                    const Center(
+                      child: Text(
+                        'Reservation starts soon',
+                        style: TextStyle(
+                          color: Color(0xFF008C72),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
+                    ),
+
+                    const Divider(height: 30),
+
+                    _detailRow(
+                      Icons.calendar_today_outlined,
+                      'Date',
+                      'Friday, 18 September 2026',
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    _detailRow(
+                      Icons.timelapse,
+                      'Duration',
+                      '2 Hours',
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
 
               Container(
                 width: double.infinity,
@@ -292,14 +274,13 @@ class BookingSuccessScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
-                      Icons.access_time_filled,
-                      size: 20,
+                      Icons.qr_code_scanner,
                       color: Color(0xFF008C72),
                     ),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        '15-Minute Check-in Window\nPlease check in within 15 minutes of your reservation start time.',
+                        'Check-in before 10:15 AM\nScan the QR code at your reserved desk to activate your study session.',
                         style: TextStyle(
                           color: Color(0xFF31545C),
                           fontSize: 11,
@@ -316,7 +297,7 @@ class BookingSuccessScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 height: 50,
-                child: ElevatedButton(
+                child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF008C72),
                     foregroundColor: Colors.white,
@@ -326,19 +307,18 @@ class BookingSuccessScreen extends StatelessWidget {
                     ),
                   ),
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ActiveBookingScreen(
-                          seatNumber: seatNumber,
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'QR Scanner screen will open next.',
                         ),
                       ),
                     );
                   },
-                  child: const Text(
-                    'View Booking',
+                  icon: const Icon(Icons.qr_code_scanner),
+                  label: const Text(
+                    'Check in via Desk QR',
                     style: TextStyle(
-                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -347,17 +327,37 @@ class BookingSuccessScreen extends StatelessWidget {
 
               const SizedBox(height: 10),
 
-              TextButton(
-                onPressed: () {
-                  Navigator.popUntil(
-                    context,
-                        (route) => route.isFirst,
-                  );
-                },
-                child: const Text(
-                  'Done',
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFB34A4A),
+                    side: const BorderSide(
+                      color: Color(0xFFE4CCCC),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () {},
+                  child: const Text(
+                    'Cancel Booking',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              const Center(
+                child: Text(
+                  'Need help?',
                   style: TextStyle(
-                    color: Color(0xFF53676D),
+                    color: Color(0xFF008C72),
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -369,11 +369,11 @@ class BookingSuccessScreen extends StatelessWidget {
     );
   }
 
-  Widget _detailRow({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
+  Widget _detailRow(
+      IconData icon,
+      String label,
+      String value,
+      ) {
     return Row(
       children: [
         Container(
@@ -385,8 +385,8 @@ class BookingSuccessScreen extends StatelessWidget {
           ),
           child: Icon(
             icon,
-            size: 19,
             color: const Color(0xFF008C72),
+            size: 19,
           ),
         ),
         const SizedBox(width: 12),
