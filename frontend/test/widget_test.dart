@@ -12,7 +12,7 @@ import 'package:biblione/api/api_client.dart';
 import 'package:biblione/debug_agent_log.dart';
 import 'package:biblione/main.dart';
 import 'package:biblione/models/book.dart';
-import 'package:biblione/screens/SearchCatalogScreen.dart';
+import 'package:biblione/screens/search_catalog_screen.dart';
 
 class FakeApiClient extends ApiClient {
   @override
