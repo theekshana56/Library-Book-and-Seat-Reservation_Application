@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'booking_success_screen.dart';
+import '../../api/api_client.dart';
 
 class ReviewBookingScreen extends StatelessWidget {
   final String seatNumber;
@@ -222,15 +223,44 @@ class ReviewBookingScreen extends StatelessWidget {
                     ),
                   ),
 
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => BookingSuccessScreen(
-                          seatNumber: seatNumber,
+                  onPressed: () async {
+                    try {
+                      await ApiClient().createSeatBooking(
+                        seatCode: seatNumber,
+                        bookingDate: '2026-09-18',
+                        startTime: '10:00:00',
+                        endTime: '12:00:00',
+                      );
+
+                      if (!context.mounted) return;
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BookingSuccessScreen(
+                            seatNumber: seatNumber,
+                          ),
                         ),
-                      ),
-                    );
+                      );
+                    } on ApiException catch (e) {
+                      if (!context.mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(e.message),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    } catch (e) {
+                      if (!context.mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Unable to create seat booking.'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   },
 
                   child: const Text(
