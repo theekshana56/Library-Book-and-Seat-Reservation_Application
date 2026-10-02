@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'qr_scanner_screen.dart';
 
 class ActiveBookingScreen extends StatelessWidget {
@@ -9,6 +10,44 @@ class ActiveBookingScreen extends StatelessWidget {
     required this.seatNumber,
   });
 
+  Future<void> _cancelBooking(BuildContext context) async {
+    final shouldCancel = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Cancel Booking?'),
+          content: Text(
+            'Are you sure you want to cancel your reservation for seat $seatNumber?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              child: const Text(
+                'Yes, Cancel',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldCancel == true && context.mounted) {
+      Navigator.popUntil(
+        context,
+            (route) => route.isFirst,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -17,97 +56,50 @@ class ActiveBookingScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFF073342),
         foregroundColor: Colors.white,
-        elevation: 0,
-        titleSpacing: 16,
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Biblione',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              'SMART LIBRARY',
-              style: TextStyle(
-                fontSize: 8,
-                letterSpacing: 1.5,
-              ),
-            ),
-          ],
+        title: const Text(
+          'My Booking',
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_none),
-          ),
-          const Padding(
-            padding: EdgeInsets.only(right: 14),
-            child: CircleAvatar(
-              radius: 16,
-              backgroundColor: Color(0xFF00A087),
-              child: Text(
-                'A',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
 
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
+
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              InkWell(
-                onTap: () => Navigator.pop(context),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.arrow_back_ios_new,
-                      size: 15,
-                      color: Color(0xFF173B46),
-                    ),
-                    SizedBox(width: 5),
-                    Text(
-                      'Back',
-                      style: TextStyle(
-                        color: Color(0xFF173B46),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              const Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'My Booking',
+                  const Text(
+                    'Active Booking',
                     style: TextStyle(
                       color: Color(0xFF0A3443),
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  Text(
-                    'RESERVED',
-                    style: TextStyle(
-                      color: Color(0xFF008C72),
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEAF7F3),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'RESERVED',
+                      style: TextStyle(
+                        color: Color(0xFF008C72),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -116,7 +108,6 @@ class ActiveBookingScreen extends StatelessWidget {
               const SizedBox(height: 18),
 
               Container(
-                width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -125,20 +116,9 @@ class ActiveBookingScreen extends StatelessWidget {
                     color: const Color(0xFFE1E8E7),
                   ),
                 ),
+
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      '#LIB-2026-7843',
-                      style: TextStyle(
-                        color: Color(0xFF7A898D),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-
-                    const SizedBox(height: 14),
-
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
@@ -164,10 +144,13 @@ class ActiveBookingScreen extends StatelessWidget {
                               ),
                             ),
                           ),
+
                           const SizedBox(width: 13),
+
                           const Expanded(
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment:
+                              CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   'Level 2 Quiet Zone',
@@ -192,80 +175,61 @@ class ActiveBookingScreen extends StatelessWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 20),
 
                     const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '10:00',
+                          '10:00 AM',
                           style: TextStyle(
-                            color: Color(0xFF173B46),
-                            fontSize: 22,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
-                          '12:00',
+                          '12:00 PM',
                           style: TextStyle(
-                            color: Color(0xFF173B46),
-                            fontSize: 22,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
 
-                    const SizedBox(height: 7),
-
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: const LinearProgressIndicator(
-                        value: 0.15,
-                        minHeight: 7,
-                        backgroundColor: Color(0xFFE3EBEA),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(0xFF008C72),
-                        ),
-                      ),
-                    ),
-
                     const SizedBox(height: 8),
 
-                    const Center(
-                      child: Text(
-                        'Reservation starts soon',
-                        style: TextStyle(
-                          color: Color(0xFF008C72),
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    const LinearProgressIndicator(
+                      value: 0.15,
+                      minHeight: 7,
+                      backgroundColor: Color(0xFFE3EBEA),
+                      valueColor:
+                      AlwaysStoppedAnimation<Color>(
+                        Color(0xFF008C72),
                       ),
                     ),
 
-                    const Divider(height: 30),
+                    const SizedBox(height: 18),
 
-                    _detailRow(
+                    _row(
                       Icons.calendar_today_outlined,
                       'Date',
-                      'Friday, 18 September 2026',
+                      '18 September 2026',
                     ),
 
-                    const SizedBox(height: 16),
+                    const Divider(height: 26),
 
-                    _detailRow(
-                      Icons.timelapse,
-                      'Duration',
-                      '2 Hours',
+                    _row(
+                      Icons.confirmation_number_outlined,
+                      'Booking ID',
+                      '#LIB-2026-7843',
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
 
               Container(
-                width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEAF7F3),
@@ -281,7 +245,7 @@ class ActiveBookingScreen extends StatelessWidget {
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Check-in before 10:15 AM\nScan the QR code at your reserved desk to activate your study session.',
+                        'Scan the QR code attached to your reserved desk to complete check-in.',
                         style: TextStyle(
                           color: Color(0xFF31545C),
                           fontSize: 11,
@@ -302,22 +266,24 @@ class ActiveBookingScreen extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF008C72),
                     foregroundColor: Colors.white,
-                    elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
+
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => QRScannerScreen(
+                        builder: (_) => QRScannerScreen(
                           seatNumber: seatNumber,
                         ),
                       ),
                     );
                   },
+
                   icon: const Icon(Icons.qr_code_scanner),
+
                   label: const Text(
                     'Check in via Desk QR',
                     style: TextStyle(
@@ -334,36 +300,16 @@ class ActiveBookingScreen extends StatelessWidget {
                 height: 46,
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFB34A4A),
-                    side: const BorderSide(
-                      color: Color(0xFFE4CCCC),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    foregroundColor: Colors.red,
                   ),
-                  onPressed: () {},
-                  child: const Text(
-                    'Cancel Booking',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  onPressed: () {
+                    _cancelBooking(context);
+                  },
+                  child: const Text('Cancel Booking'),
                 ),
               ),
 
-              const SizedBox(height: 16),
-
-              const Center(
-                child: Text(
-                  'Need help?',
-                  style: TextStyle(
-                    color: Color(0xFF008C72),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -371,48 +317,25 @@ class ActiveBookingScreen extends StatelessWidget {
     );
   }
 
-  Widget _detailRow(
+  Widget _row(
       IconData icon,
-      String label,
+      String title,
       String value,
       ) {
     return Row(
       children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: const Color(0xFFEAF7F3),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            icon,
-            color: const Color(0xFF008C72),
-            size: 19,
-          ),
+        Icon(
+          icon,
+          color: const Color(0xFF008C72),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF809094),
-                  fontSize: 10,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Color(0xFF173B46),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          child: Text(title),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
