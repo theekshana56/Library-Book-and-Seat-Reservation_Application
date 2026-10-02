@@ -10,20 +10,37 @@ class CheckinSuccessScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final checkinTime =
+    TimeOfDay.fromDateTime(
+      DateTime.now(),
+    ).format(context);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFA),
+
       appBar: AppBar(
         backgroundColor: const Color(0xFF073342),
         foregroundColor: Colors.white,
-        elevation: 0,
         title: const Text(
           'Check-in',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
+
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(18),
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
+          padding: const EdgeInsets.fromLTRB(
+            18,
+            24,
+            18,
+            30,
+          ),
+
           child: Column(
             children: [
               Container(
@@ -51,11 +68,10 @@ class CheckinSuccessScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 6),
+              const SizedBox(height: 7),
 
               const Text(
-                'Your desk reservation is now active.',
-                textAlign: TextAlign.center,
+                'Your study session is now active.',
                 style: TextStyle(
                   color: Color(0xFF78868A),
                   fontSize: 12,
@@ -69,138 +85,97 @@ class CheckinSuccessScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius:
+                  BorderRadius.circular(18),
                   border: Border.all(
                     color: const Color(0xFFE1E8E7),
                   ),
                 ),
+
                 child: Column(
                   children: [
                     Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(14),
+                      width: 70,
+                      height: 70,
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEDF8F4),
-                        borderRadius: BorderRadius.circular(14),
+                        color:
+                        const Color(0xFF008C72),
+                        borderRadius:
+                        BorderRadius.circular(14),
                       ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 58,
-                            height: 58,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF008C72),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              seatNumber,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 13),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Seat A04',
-                                  style: TextStyle(
-                                    color: Color(0xFF173B46),
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Level 2 Quiet Zone',
-                                  style: TextStyle(
-                                    color: Color(0xFF78868A),
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        seatNumber,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight:
+                          FontWeight.bold,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    Text(
+                      'Seat $seatNumber',
+                      style: const TextStyle(
+                        color:
+                        Color(0xFF173B46),
+                        fontSize: 16,
+                        fontWeight:
+                        FontWeight.bold,
                       ),
                     ),
 
                     const SizedBox(height: 18),
 
-                    _detailRow(
-                      Icons.calendar_today_outlined,
-                      'Date',
-                      '18 September 2026',
+                    _row(
+                      'Location',
+                      'Level 2 Quiet Zone',
                     ),
 
                     const Divider(height: 26),
 
-                    _detailRow(
-                      Icons.access_time,
+                    _row(
                       'Session',
                       '10:00 AM – 12:00 PM',
                     ),
 
                     const Divider(height: 26),
 
-                    _detailRow(
-                      Icons.login,
+                    _row(
                       'Check-in Time',
-                      '10:03 AM',
+                      checkinTime,
                     ),
 
                     const Divider(height: 26),
 
-                    _detailRow(
-                      Icons.timelapse,
-                      'Duration Remaining',
-                      '1 hr 57 min',
-                    ),
-
-                    const Divider(height: 26),
-
-                    _detailRow(
-                      Icons.confirmation_number_outlined,
-                      'Booking ID',
-                      '#LIB-2026-7843',
+                    _row(
+                      'Status',
+                      'CHECKED IN',
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
 
               Container(
-                width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEAF7F3),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius:
+                  BorderRadius.circular(14),
                 ),
-                child: const Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Color(0xFF008C72),
-                    ),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Enjoy your study session! Remember to check out when you are done to free up the space for fellow scholars.',
-                        style: TextStyle(
-                          color: Color(0xFF31545C),
-                          fontSize: 11,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
+                child: const Text(
+                  'Enjoy your study session. Please leave the desk clean and available after your booking period.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF31545C),
+                    fontSize: 11,
+                    height: 1.4,
+                  ),
                 ),
               ),
 
@@ -211,27 +186,34 @@ class CheckinSuccessScreen extends StatelessWidget {
                 height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF008C72),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
+                    backgroundColor:
+                    const Color(0xFF008C72),
+                    foregroundColor:
+                    Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius:
+                      BorderRadius.circular(12),
                     ),
                   ),
+
                   onPressed: () {
                     Navigator.popUntil(
                       context,
                           (route) => route.isFirst,
                     );
                   },
+
                   child: const Text(
                     'Done',
                     style: TextStyle(
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                      FontWeight.bold,
                     ),
                   ),
                 ),
               ),
+
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -239,48 +221,30 @@ class CheckinSuccessScreen extends StatelessWidget {
     );
   }
 
-  Widget _detailRow(
-      IconData icon,
-      String label,
+  Widget _row(
+      String title,
       String value,
       ) {
     return Row(
+      mainAxisAlignment:
+      MainAxisAlignment.spaceBetween,
       children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: const Color(0xFFEAF7F3),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            icon,
-            color: const Color(0xFF008C72),
-            size: 19,
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFF809094),
+            fontSize: 11,
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF809094),
-                  fontSize: 10,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Color(0xFF173B46),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: Color(0xFF173B46),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],
