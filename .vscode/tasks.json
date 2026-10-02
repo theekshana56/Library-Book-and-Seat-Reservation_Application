@@ -2,16 +2,18 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Backend: Run with local .env",
+      "label": "Flutter: Run on 25028RN03A",
       "type": "process",
-      "command": "powershell",
+      "command": "flutter",
       "args": [
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        "${workspaceFolder}\\backend\\run-local.ps1"
+        "run",
+        "-d",
+        "25028RN03A",
+        "--dart-define-from-file=dart_defines.json"
       ],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
       "problemMatcher": []
     }
   ]
