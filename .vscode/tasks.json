@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Flutter: Run on 25028RN03A",
+      "type": "process",
+      "command": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "25028RN03A",
+        "--dart-define-from-file=dart_defines.json"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
