@@ -1,5 +1,19 @@
 # biblione
 
+## Run on the Android device
+
+In VS Code, open **Terminal → Run Task…** (or press `Ctrl+Shift+P` and choose
+**Tasks: Run Task**), then select **Flutter: Run on 25028RN03A**. This runs the
+app with the local API and Google Books configuration from `dart_defines.json`.
+
+The local config is ignored by Git so API keys are not added to commits. If it
+is missing, copy `dart_defines.example.json` to `dart_defines.json` and fill in
+your values. The phone and API server must be reachable on the same network.
+
+Google Books keys are included in the built app and should not be treated as
+secret once distributed. Restrict the key in Google Cloud to the APIs and
+applications that need it.
+
 A new Flutter project.
 
 ## Getting Started
