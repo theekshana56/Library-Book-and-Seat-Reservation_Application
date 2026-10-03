@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'admin/screens/admin_dashboard_screen.dart';
 import 'debug_agent_log.dart';
+import 'screens/home_screen.dart';
 import 'seat_recommender/screens/find_seat_screen.dart';
 import 'screens/my_bookings_screen.dart';
 import 'screens/search_catalog_screen.dart';
@@ -61,19 +62,20 @@ class BiblioneShell extends StatefulWidget {
 }
 
 class _BiblioneShellState extends State<BiblioneShell> {
-  int _index = 2;
+  int _index = 0;
 
   @override
   Widget build(BuildContext context) {
     final pages = [
-      const _PlaceholderPage(
-        title: 'Home',
-        subtitle: 'Welcome back to the university library.',
+      HomeScreen(
+        onFindSeat: () => setState(() => _index = 1),
+        onExploreBooks: () => setState(() => _index = 2),
+        onViewBookings: () => setState(() => _index = 3),
       ),
-      FindSeatScreen(onBack: () => setState(() => _index = 2)),
+      FindSeatScreen(onBack: () => setState(() => _index = 0)),
       const SearchCatalogScreen(),
       const MyBookingsScreen(),
-      _PlaceholderPage(
+      _ProfilePage(
         title: 'Profile',
         subtitle: 'RW • CS Dept • Card 2024-9182',
         onAdmin: () => Navigator.of(
@@ -104,11 +106,12 @@ class _BiblioneShellState extends State<BiblioneShell> {
   }
 }
 
-class _PlaceholderPage extends StatelessWidget {
+class _ProfilePage extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback? onAdmin;
-  const _PlaceholderPage({
+
+  const _ProfilePage({
     required this.title,
     required this.subtitle,
     this.onAdmin,
