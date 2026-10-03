@@ -8,7 +8,7 @@ import '../models/book.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ui_kit.dart';
-import 'ConfirmReservationScreen.dart';
+import 'confirm_reservation_screen.dart';
 
 class BookDetailsScreen extends StatefulWidget {
   final String bookId;
