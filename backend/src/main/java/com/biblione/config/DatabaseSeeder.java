@@ -42,6 +42,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         private final AdminUserRepository adminUserRepository;
         private final ShelfRepository shelfRepository;
         private final PasswordEncoder passwordEncoder;
+        private final com.biblione.notification.repository.NotificationRepository notificationRepository;
 
         @Value("${biblione.seed-password:Biblione-ChangeMe-2026}")
         private String seedPassword;
@@ -49,6 +50,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) {
                 seedAdminData();
+                seedMissingNotifications();
         if (bookRepository.count() > 0) {
             log.info("Catalog already seeded ({} books). Skipping.", bookRepository.count());
             return;
@@ -232,5 +234,34 @@ public class DatabaseSeeder implements CommandLineRunner {
                                 .userCategory(category)
                                 .active(true)
                                 .build());
+        }
+
+        private void seedMissingNotifications() {
+                long systemNotificationCount = notificationRepository.findAll().stream().filter(n -> "SYSTEM".equals(n.getType())).count();
+                if (systemNotificationCount > 0) return;
+
+                List<Reservation> reservations = reservationRepository.findAll();
+                for (Reservation res : reservations) {
+                        notificationRepository.save(com.biblione.notification.model.Notification.builder()
+                                .userId(res.getUserId())
+                                .title("Book Reservation Placed")
+                                .message("Your reservation for '" + res.getTitle() + "' has been recorded.")
+                                .type("SYSTEM")
+                                .isRead(false)
+                                .build());
+                }
+
+                List<SeatHold> seats = seatHoldRepository.findAll();
+                for (SeatHold seat : seats) {
+                        notificationRepository.save(com.biblione.notification.model.Notification.builder()
+                                .userId(seat.getUserId())
+                                .title("Seat Hold Confirmed")
+                                .message("Your hold for seat " + seat.getSeatCode() + " is confirmed.")
+                                .type("SYSTEM")
+                                .isRead(false)
+                                .build());
+                }
+                
+                log.info("Seeded missing notifications for existing reservations and seat holds.");
         }
 }
