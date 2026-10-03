@@ -5,6 +5,7 @@ import '../../theme/app_colors.dart';
 import '../../widgets/ui_kit.dart';
 import '../controllers/auth_controller.dart';
 import '../screens/login_screen.dart';
+import '../screens/onboarding_screen.dart';
 
 class AuthGate extends StatefulWidget {
   final AuthController? authController;
@@ -18,6 +19,7 @@ class AuthGate extends StatefulWidget {
 class _AuthGateState extends State<AuthGate> {
   late final AuthController _authController;
   bool _ownsController = false;
+  bool _showOnboarding = true;
 
   @override
   void initState() {
@@ -46,6 +48,16 @@ class _AuthGateState extends State<AuthGate> {
       builder: (context, _) {
         if (!_authController.isInitialized) {
           return const _AuthSplashView();
+        }
+
+        if (_showOnboarding) {
+          return OnboardingScreen(
+            onComplete: () {
+              setState(() {
+                _showOnboarding = false;
+              });
+            },
+          );
         }
 
         if (_authController.isAuthenticated) {
