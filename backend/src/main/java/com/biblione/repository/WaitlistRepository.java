@@ -1,4 +1,4 @@
-package com.biblione.repository;
+﻿package com.biblione.repository;
 
 import com.biblione.model.WaitlistEntry;
 import org.springframework.data.mongodb.repository.MongoRepository;

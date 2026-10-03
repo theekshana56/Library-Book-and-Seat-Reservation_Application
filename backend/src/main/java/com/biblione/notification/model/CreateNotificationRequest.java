@@ -1,4 +1,4 @@
-package com.biblione.notification.model;
+﻿package com.biblione.notification.model;
 
 import jakarta.validation.constraints.NotBlank;
 

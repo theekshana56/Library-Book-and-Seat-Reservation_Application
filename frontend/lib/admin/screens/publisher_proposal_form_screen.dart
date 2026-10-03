@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -458,7 +458,7 @@ class _PublisherProposalFormScreenState
           ),
           const SizedBox(height: 5),
           Text(
-            '${proposal.author} · ${proposal.category} · ${proposal.vendorSupplyQty} copies',
+            '${proposal.author} Â· ${proposal.category} Â· ${proposal.vendorSupplyQty} copies',
             style: GoogleFonts.plusJakartaSans(
               color: const Color(0xFF5B6B7C),
               fontSize: 11,

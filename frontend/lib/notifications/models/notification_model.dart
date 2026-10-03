@@ -1,4 +1,4 @@
-class AppNotification {
+﻿class AppNotification {
   final String id;
   final String title;
   final String message;

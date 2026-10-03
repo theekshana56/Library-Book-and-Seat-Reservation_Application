@@ -1,4 +1,4 @@
-package com.biblione.auth.security;
+﻿package com.biblione.auth.security;
 
 public final class AuthContext {
 

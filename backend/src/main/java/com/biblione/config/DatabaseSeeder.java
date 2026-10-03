@@ -1,4 +1,4 @@
-package com.biblione.config;
+﻿package com.biblione.config;
 
 import com.biblione.admin.model.AdminUser;
 import com.biblione.admin.model.Shelf;
@@ -180,7 +180,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .userId(DEMO_USER_ID)
                 .seatCode("A04")
                 .seatName("Seat - A04")
-                .zone("Silent Pod · Level 2 Quiet Zone · Window View")
+                .zone("Silent Pod Â· Level 2 Quiet Zone Â· Window View")
                 .slotLabel("Today, 10:00 - 12:00")
                 .amenities(List.of("power", "wifi", "quiet"))
                 .checkInBy(now.plus(12, ChronoUnit.MINUTES).plus(40, ChronoUnit.SECONDS))

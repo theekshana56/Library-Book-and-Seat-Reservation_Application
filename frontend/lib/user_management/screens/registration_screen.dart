@@ -1,4 +1,4 @@
-import 'package:flutter/gestures.dart';
+﻿import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../controllers/auth_controller.dart';
@@ -168,7 +168,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             ],
           ),
           securityTitle:
-              'SLIIT University Library System — Encrypted & Authorized Academic Access',
+              'SLIIT University Library System â€” Encrypted & Authorized Academic Access',
           securitySubtitle: null,
           body: Form(
             key: _formKey,

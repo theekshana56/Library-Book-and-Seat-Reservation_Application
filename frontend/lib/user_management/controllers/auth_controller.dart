@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import '../../api/api_client.dart';
 import '../models/user_profile.dart';
 import '../services/auth_api_client.dart';

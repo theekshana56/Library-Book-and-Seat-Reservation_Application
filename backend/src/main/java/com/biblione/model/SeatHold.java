@@ -1,4 +1,4 @@
-package com.biblione.model;
+﻿package com.biblione.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

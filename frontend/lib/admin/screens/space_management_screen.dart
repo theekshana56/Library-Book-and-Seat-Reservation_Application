@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_colors.dart';
@@ -310,7 +310,7 @@ class _SpaceManagementScreenState extends State<SpaceManagementScreen> {
                     (hall) => DropdownMenuItem(
                       value: hall.hallCode,
                       child: Text(
-                        '${hall.name} · ${hall.hallCode}',
+                        '${hall.name} Â· ${hall.hallCode}',
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -411,9 +411,9 @@ class _SpaceManagementScreenState extends State<SpaceManagementScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${hall.name} · ${hall.hallCode}', style: _titleStyle()),
+                Text('${hall.name} Â· ${hall.hallCode}', style: _titleStyle()),
                 Text(
-                  '${hall.building} · ${hall.floorCount} floors',
+                  '${hall.building} Â· ${hall.floorCount} floors',
                   style: _bodyStyle(),
                 ),
                 if (hall.description.isNotEmpty)
@@ -438,12 +438,12 @@ class _SpaceManagementScreenState extends State<SpaceManagementScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${seat.seatCode} · ${seat.hallCode}',
+                  '${seat.seatCode} Â· ${seat.hallCode}',
                   style: _titleStyle(),
                 ),
-                Text('${seat.floor} · ${seat.zone}', style: _bodyStyle()),
+                Text('${seat.floor} Â· ${seat.zone}', style: _bodyStyle()),
                 Text(
-                  '${seat.acousticsDb} dB · ${seat.hasPowerOutlet ? 'Power outlet' : 'No outlet'}${seat.features.isEmpty ? '' : ' · ${seat.features.join(', ')}'}',
+                  '${seat.acousticsDb} dB Â· ${seat.hasPowerOutlet ? 'Power outlet' : 'No outlet'}${seat.features.isEmpty ? '' : ' Â· ${seat.features.join(', ')}'}',
                   style: _bodyStyle(),
                 ),
               ],
