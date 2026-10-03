@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/book.dart';
 import '../models/models.dart';
+import '../user_management/services/auth_storage.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -52,11 +53,19 @@ class ApiClient {
   }
 
   Future<Reservation> reserveBook(String bookId) async {
+    String currentUserId = demoUserId;
+    try {
+      final user = await AuthStorage().getUser();
+      if (user != null && user.universityId != null && user.universityId!.isNotEmpty) {
+        currentUserId = user.universityId!;
+      }
+    } catch (_) {}
+
     final res = await http.post(
       Uri.parse('$baseUrl/api/v1/reservations'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'userId': demoUserId,
+        'userId': currentUserId,
         'bookId': bookId,
         'borrowerLabel': 'RW - 20248839',
         'studentCardId': '2024-9182',
@@ -85,9 +94,10 @@ class ApiClient {
     _ensureOk(res);
   }
 
-  Future<UserBookings> getBookings() async {
+  Future<UserBookings> getBookings([String? userId]) async {
+    final targetId = userId ?? demoUserId;
     final res = await http.get(
-      Uri.parse('$baseUrl/api/v1/users/$demoUserId/bookings'),
+      Uri.parse('$baseUrl/api/v1/users/$targetId/bookings'),
     );
     _ensureOk(res);
     return UserBookings.fromJson(jsonDecode(res.body) as Map<String, dynamic>);

@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../admin/screens/admin_dashboard_screen.dart';
 import '../../widgets/ui_kit.dart';
 import '../controllers/auth_controller.dart';
 import 'change_password_screen.dart';
 import 'edit_profile_screen.dart';
+import '../widgets/active_bookings_view.dart';
 
 class ProfileScreen extends StatelessWidget {
   final AuthController authController;
@@ -340,7 +341,7 @@ class ProfileScreen extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                ' â€¢ ',
+                                ' • ',
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w600,
@@ -359,7 +360,7 @@ class ProfileScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
 
-                          // Studying Computing â€¢ Year 3 badge
+                          // Studying Computing • Year 3 badge
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 14,
@@ -385,8 +386,8 @@ class ProfileScreen extends StatelessWidget {
                                 Text(
                                   user.department != null &&
                                           user.department!.isNotEmpty
-                                      ? 'Studying ${user.department} â€¢ Year 3'
-                                      : 'Studying Computing â€¢ Year 3',
+                                      ? 'Studying ${user.department} • Year 3'
+                                      : 'Studying Computing • Year 3',
                                   style: GoogleFonts.plusJakartaSans(
                                     color: const Color(0xFF00875A),
                                     fontSize: 11.5,
@@ -398,6 +399,11 @@ class ProfileScreen extends StatelessWidget {
                           ),
                         ],
                       ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    ActiveBookingsView(
+                      userId: user.universityId ?? user.id,
                     ),
                     const SizedBox(height: 16),
 
@@ -840,7 +846,7 @@ class _ReceiptItem extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '$date â€¢ $receiptId',
+                  '$date • $receiptId',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 11,
                     color: const Color(0xFF64748B),
@@ -932,3 +938,5 @@ class _PreferenceSwitchState extends State<_PreferenceSwitch> {
     );
   }
 }
+
+

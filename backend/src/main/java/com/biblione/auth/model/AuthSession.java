@@ -1,4 +1,4 @@
-package com.biblione.auth.model;
+﻿package com.biblione.auth.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

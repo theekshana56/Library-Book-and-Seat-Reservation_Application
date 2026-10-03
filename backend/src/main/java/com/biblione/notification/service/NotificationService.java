@@ -17,10 +17,18 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
 
     public List<Notification> getUserNotifications(String userId, String universityId) {
-        java.util.List<String> ids = new java.util.ArrayList<>();
+        java.util.Set<String> ids = new java.util.HashSet<>();
         if (userId != null && !userId.isBlank()) ids.add(userId);
-        if (universityId != null && !universityId.isBlank() && !ids.contains(universityId)) ids.add(universityId);
-        return notificationRepository.findByUserIdInOrderByCreatedAtDesc(ids);
+        if (universityId != null && !universityId.isBlank()) {
+            ids.add(universityId);
+            ids.add(universityId.toUpperCase());
+            ids.add(universityId.toLowerCase());
+            String trimmed = universityId.replaceAll("(?i)v$", "");
+            ids.add(trimmed);
+            ids.add(trimmed.toUpperCase());
+            ids.add(trimmed.toLowerCase());
+        }
+        return notificationRepository.findByUserIdInOrderByCreatedAtDesc(new java.util.ArrayList<>(ids));
     }
 
     public List<Notification> getUserNotifications(String userId) {
@@ -73,8 +81,10 @@ public class NotificationService {
     private Notification getNotificationIfOwned(String userId, String universityId, String id) {
         Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Notification not found."));
-        boolean match = (userId != null && userId.equals(notification.getUserId())) ||
-                        (universityId != null && universityId.equalsIgnoreCase(notification.getUserId()));
+        String notifUser = notification.getUserId();
+        boolean match = (userId != null && userId.equalsIgnoreCase(notifUser)) ||
+                        (universityId != null && universityId.equalsIgnoreCase(notifUser)) ||
+                        (universityId != null && notifUser != null && universityId.replaceAll("(?i)v$", "").equalsIgnoreCase(notifUser.replaceAll("(?i)v$", "")));
         if (!match) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Access denied.");
         }

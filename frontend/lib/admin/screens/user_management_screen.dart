@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_colors.dart';
@@ -277,7 +277,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   ),
                 ),
                 Text(
-                  '${user.role.replaceAll('_', ' ')} · ${user.department}',
+                  '${user.role.replaceAll('_', ' ')} Â· ${user.department}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.plusJakartaSans(
