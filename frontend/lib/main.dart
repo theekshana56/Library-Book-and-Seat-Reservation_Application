@@ -10,6 +10,9 @@ import 'screens/SearchCatalogScreen.dart';
 import 'theme/app_theme.dart';
 import 'theme/app_colors.dart';
 import 'widgets/ui_kit.dart';
+import 'user_management/controllers/auth_controller.dart';
+import 'user_management/screens/profile_screen.dart';
+import 'user_management/widgets/auth_gate.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +43,14 @@ void main() {
 }
 
 class BiblioneApp extends StatelessWidget {
-  const BiblioneApp({super.key});
+  final AuthController? authController;
+  final Widget? home;
+
+  const BiblioneApp({
+    super.key,
+    this.authController,
+    this.home,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -48,20 +58,22 @@ class BiblioneApp extends StatelessWidget {
       title: 'Biblione',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: const BiblioneShell(),
+      home: home ?? AuthGate(authController: authController),
     );
   }
 }
 
 class BiblioneShell extends StatefulWidget {
-  const BiblioneShell({super.key});
+  final AuthController? authController;
+
+  const BiblioneShell({super.key, this.authController});
 
   @override
   State<BiblioneShell> createState() => _BiblioneShellState();
 }
 
 class _BiblioneShellState extends State<BiblioneShell> {
-  int _index = 2;
+  int _index = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -73,13 +85,16 @@ class _BiblioneShellState extends State<BiblioneShell> {
       FindSeatScreen(onBack: () => setState(() => _index = 2)),
       const SearchCatalogScreen(),
       const MyBookingsScreen(),
-      _PlaceholderPage(
-        title: 'Profile',
-        subtitle: 'RW • CS Dept • Card 2024-9182',
-        onAdmin: () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => const AdminDashboardScreen())),
-      ),
+      if (widget.authController != null)
+        ProfileScreen(authController: widget.authController!)
+      else
+        _PlaceholderPage(
+          title: 'Profile',
+          subtitle: 'RW • CS Dept • Card 2024-9182',
+          onAdmin: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const AdminDashboardScreen())),
+        ),
     ];
     return Scaffold(
       backgroundColor: AppColors.pageBg,

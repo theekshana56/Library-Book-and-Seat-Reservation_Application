@@ -30,7 +30,6 @@ class NavyAppHeader extends StatelessWidget {
   final String? eyebrow;
   final String? title;
   final Widget? extra;
-  final String avatar;
   final bool showBell;
 
   const NavyAppHeader({
@@ -39,7 +38,6 @@ class NavyAppHeader extends StatelessWidget {
     this.eyebrow,
     this.title,
     this.extra,
-    this.avatar = 'KD',
     this.showBell = true,
   });
 
@@ -113,24 +111,6 @@ class NavyAppHeader extends StatelessWidget {
                     ),
                   ],
                 ),
-              if (showBell) const SizedBox(width: 10),
-              Container(
-                width: 36,
-                height: 36,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF1A9B84),
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  avatar,
-                  style: GoogleFonts.plusJakartaSans(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
             ],
           ),
           if (eyebrow != null || title != null || extra != null) ...[
