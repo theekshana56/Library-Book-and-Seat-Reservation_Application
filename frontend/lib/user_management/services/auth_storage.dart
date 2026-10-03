@@ -9,7 +9,7 @@ class AuthStorage {
   final FlutterSecureStorage _storage;
 
   // In-memory fallback if platform secure storage is not available in mock/test environments
-  final Map<String, String> _memoryFallback = {};
+  static final Map<String, String> _memoryFallback = {};
 
   AuthStorage({FlutterSecureStorage? storage})
       : _storage = storage ?? const FlutterSecureStorage();

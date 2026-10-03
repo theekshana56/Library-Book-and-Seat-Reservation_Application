@@ -42,6 +42,11 @@ public class BearerTokenAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         try {
             resolveAuthentication(request);
 
@@ -91,6 +96,9 @@ public class BearerTokenAuthenticationFilter extends OncePerRequestFilter {
     private boolean isProtectedPath(HttpServletRequest request) {
         String path = request.getRequestURI();
         if (path.startsWith("/api/v1/users/me")) {
+            return true;
+        }
+        if (path.startsWith("/api/v1/notifications")) {
             return true;
         }
         if (path.equals("/api/v1/auth/logout")) {
