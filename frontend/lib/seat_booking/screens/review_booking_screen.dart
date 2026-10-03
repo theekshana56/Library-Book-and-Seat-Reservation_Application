@@ -255,8 +255,8 @@ class ReviewBookingScreen extends StatelessWidget {
                       if (!context.mounted) return;
 
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Unable to create seat booking.'),
+                        SnackBar(
+                          content: Text(e.toString()),
                           backgroundColor: Colors.red,
                         ),
                       );
