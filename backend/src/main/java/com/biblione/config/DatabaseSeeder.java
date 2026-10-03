@@ -203,9 +203,10 @@ public class DatabaseSeeder implements CommandLineRunner {
     }
 
         private void seedAdminData() {
-                seedUser("seed-admin", "admin@biblione.edu", "Library Administrator", UserRole.ADMIN, "Library", "ADMIN");
-                seedUser("seed-staff", "staff@biblione.edu", "Library Staff", UserRole.LIBRARY_STAFF, "Library Services", "STAFF");
-                seedUser("seed-vendor", "vendor@biblione.edu", "Biblione Books Vendor", UserRole.VENDOR, "Publishing", "VENDOR");
+                seedUser("seed-admin", null, "admin@biblione.edu", "Library Administrator", UserRole.ADMIN, "Library", "ADMIN");
+                seedUser("seed-staff", null, "staff@biblione.edu", "Library Staff", UserRole.LIBRARY_STAFF, "Library Services", "STAFF");
+                seedUser("seed-vendor", null, "vendor@biblione.edu", "Biblione Books Vendor", UserRole.VENDOR, "Publishing", "VENDOR");
+                seedUser("seed-student", DEMO_USER_ID, "student@biblione.edu", "Ravindu Weerasinghe", UserRole.STUDENT, "CS Dept", "UNDERGRADUATE");
 
                 List<Shelf> shelves = List.of(
                                 Shelf.builder().shelfCode("CS-204").level("Level 2").zone("East Wing").maxCapacity(50).currentBookCount(0).build(),
@@ -215,13 +216,14 @@ public class DatabaseSeeder implements CommandLineRunner {
                                 shelfRepository.save(shelf);
                         }
                 }
-                log.info("Seeded initial admin, staff, vendor, and shelf records when absent.");
+                log.info("Seeded initial admin, staff, vendor, student, and shelf records when absent.");
         }
 
-        private void seedUser(String id, String email, String name, UserRole role, String department, String category) {
+        private void seedUser(String id, String universityId, String email, String name, UserRole role, String department, String category) {
                 if (adminUserRepository.existsByEmailIgnoreCase(email)) return;
                 adminUserRepository.save(AdminUser.builder()
                                 .id(id)
+                                .universityId(universityId)
                                 .fullName(name)
                                 .email(email)
                                 .password(passwordEncoder.encode(seedPassword))
