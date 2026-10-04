@@ -1,4 +1,4 @@
-﻿package com.biblione.notification.model;
+package com.biblione.notification.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

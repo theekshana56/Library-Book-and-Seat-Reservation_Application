@@ -1,4 +1,4 @@
-﻿package com.biblione.admin.model;
+package com.biblione.admin.model;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
