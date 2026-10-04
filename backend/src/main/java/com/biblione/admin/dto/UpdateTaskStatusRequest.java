@@ -1,4 +1,4 @@
-﻿package com.biblione.admin.dto;
+package com.biblione.admin.dto;
 
 import com.biblione.admin.model.TaskStatus;
 import jakarta.validation.constraints.NotNull;

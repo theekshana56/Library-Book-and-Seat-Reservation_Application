@@ -9,7 +9,7 @@ import '../models/book.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ui_kit.dart';
-import 'BookDetailsScreen.dart';
+import 'book_details_screen.dart';
 
 class SearchCatalogScreen extends StatefulWidget {
   const SearchCatalogScreen({super.key, this.apiClient});
@@ -63,10 +63,10 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
     _controller.dispose();
     // #region agent log
     agentDebugLog(
-      location: 'SearchCatalogScreen.dart:dispose',
+      location: 'search_catalog_screen.dart:dispose',
       message: 'search catalog state disposing',
       hypothesisId: 'D',
-      data: {'controllerListeners': _controller.hasListeners},
+      data: {'controllerDisposed': true},
     );
     // #endregion
     super.dispose();
