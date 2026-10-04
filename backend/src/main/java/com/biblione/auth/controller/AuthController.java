@@ -1,4 +1,4 @@
-﻿package com.biblione.auth.controller;
+package com.biblione.auth.controller;
 
 import com.biblione.auth.security.AuthContext;
 import com.biblione.auth.security.AuthenticatedUser;

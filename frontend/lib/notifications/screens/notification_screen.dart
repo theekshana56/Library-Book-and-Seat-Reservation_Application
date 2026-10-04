@@ -91,8 +91,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         messageController.text.trim(),
                       );
                     }
-                    if (mounted) Navigator.pop(context);
+                    if (!context.mounted) return;
+                    Navigator.pop(context);
                   } catch (e) {
+                    if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Error saving reminder: $e')),
                     );
@@ -266,7 +268,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             boxShadow: [
               if (!notification.isRead)
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 )

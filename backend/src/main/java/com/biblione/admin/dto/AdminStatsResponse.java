@@ -1,4 +1,4 @@
-﻿package com.biblione.admin.dto;
+package com.biblione.admin.dto;
 
 public record AdminStatsResponse(
         long totalRegisteredUsers,

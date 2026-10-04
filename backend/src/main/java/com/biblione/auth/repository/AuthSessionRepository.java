@@ -1,4 +1,4 @@
-﻿package com.biblione.auth.repository;
+package com.biblione.auth.repository;
 
 import com.biblione.auth.model.AuthSession;
 import org.springframework.data.mongodb.repository.MongoRepository;

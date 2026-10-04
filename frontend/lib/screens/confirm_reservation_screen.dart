@@ -6,7 +6,7 @@ import '../models/book.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ui_kit.dart';
-import 'ReservationReceiptScreen.dart';
+import 'reservation_receipt_screen.dart';
 
 class ConfirmReservationScreen extends StatefulWidget {
   final Book book;

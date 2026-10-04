@@ -4,9 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'admin/screens/admin_dashboard_screen.dart';
 import 'debug_agent_log.dart';
+import 'screens/home_screen.dart';
 import 'seat_recommender/screens/find_seat_screen.dart';
-import 'screens/MyBookingsScreen.dart';
-import 'screens/SearchCatalogScreen.dart';
+import 'screens/my_bookings_screen.dart';
+import 'screens/search_catalog_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/app_colors.dart';
 import 'widgets/ui_kit.dart';
@@ -46,11 +47,7 @@ class BiblioneApp extends StatelessWidget {
   final AuthController? authController;
   final Widget? home;
 
-  const BiblioneApp({
-    super.key,
-    this.authController,
-    this.home,
-  });
+  const BiblioneApp({super.key, this.authController, this.home});
 
   @override
   Widget build(BuildContext context) {
@@ -78,11 +75,12 @@ class _BiblioneShellState extends State<BiblioneShell> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      const _PlaceholderPage(
-        title: 'Home',
-        subtitle: 'Welcome back to the university library.',
+      HomeScreen(
+        onFindSeat: () => setState(() => _index = 1),
+        onExploreBooks: () => setState(() => _index = 2),
+        onViewBookings: () => setState(() => _index = 3),
       ),
-      FindSeatScreen(onBack: () => setState(() => _index = 2)),
+      FindSeatScreen(onBack: () => setState(() => _index = 0)),
       const SearchCatalogScreen(),
       const MyBookingsScreen(),
       if (widget.authController != null)
@@ -91,10 +89,17 @@ class _BiblioneShellState extends State<BiblioneShell> {
         _PlaceholderPage(
           title: 'Profile',
           subtitle: 'RW • CS Dept • Card 2024-9182',
-          onAdmin: () => Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const AdminDashboardScreen())),
+          onAdmin: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+          ),
         ),
+      _ProfilePage(
+        title: 'Profile',
+        subtitle: 'RW • CS Dept • Card 2024-9182',
+        onAdmin: () => Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const AdminDashboardScreen())),
+      ),
     ];
     return Scaffold(
       backgroundColor: AppColors.pageBg,
@@ -123,7 +128,25 @@ class _PlaceholderPage extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback? onAdmin;
+
   const _PlaceholderPage({
+    required this.title,
+    required this.subtitle,
+    this.onAdmin,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _ProfilePage(title: title, subtitle: subtitle, onAdmin: onAdmin);
+  }
+}
+
+class _ProfilePage extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final VoidCallback? onAdmin;
+
+  const _ProfilePage({
     required this.title,
     required this.subtitle,
     this.onAdmin,
