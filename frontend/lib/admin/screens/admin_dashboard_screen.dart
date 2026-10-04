@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../controllers/admin_api_client.dart';
@@ -176,7 +176,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Operational overview · ${stats.activeUsers} active accounts',
+                'Operational overview Â· ${stats.activeUsers} active accounts',
                 style: GoogleFonts.plusJakartaSans(
                   color: const Color(0xFFB8C7D5),
                   fontSize: 11,

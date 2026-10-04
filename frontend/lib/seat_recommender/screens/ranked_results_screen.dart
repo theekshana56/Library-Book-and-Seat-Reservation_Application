@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
@@ -128,7 +128,7 @@ class _RankedResultsScreenState extends State<RankedResultsScreen> {
               ),
               const SizedBox(height: 3),
               Text(
-                '${widget.request.zonePreference} · ${DateFormat('EEE, MMM d').format(widget.request.date)} · ${DateFormat('h:mm a').format(DateFormat('HH:mm:ss').parse(widget.request.startTime))}',
+                '${widget.request.zonePreference} Â· ${DateFormat('EEE, MMM d').format(widget.request.date)} Â· ${DateFormat('h:mm a').format(DateFormat('HH:mm:ss').parse(widget.request.startTime))}',
                 style: GoogleFonts.plusJakartaSans(
                   color: const Color(0xFFCAD6E1),
                   fontSize: 10,
@@ -223,7 +223,7 @@ class _RankedResultsScreenState extends State<RankedResultsScreen> {
         ),
         const SizedBox(height: 3),
         Text(
-          '${seat.floor} · ${seat.zone}',
+          '${seat.floor} Â· ${seat.zone}',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: _muted(11),
@@ -234,7 +234,7 @@ class _RankedResultsScreenState extends State<RankedResultsScreen> {
             Expanded(
               child: _spec(
                 Icons.graphic_eq,
-                '${seat.acousticsDb} dB · ${_acousticLabel(seat.acousticsDb)}',
+                '${seat.acousticsDb} dB Â· ${_acousticLabel(seat.acousticsDb)}',
               ),
             ),
             Expanded(
@@ -358,10 +358,10 @@ class _RankedResultsScreenState extends State<RankedResultsScreen> {
               ),
             ),
             const SizedBox(height: 6),
-            Text('${seat.floor} · ${seat.zone}', style: _muted(12)),
+            Text('${seat.floor} Â· ${seat.zone}', style: _muted(12)),
             const SizedBox(height: 12),
             Text(
-              '${seat.acousticsDb} dB · ${seat.hasPowerOutlet ? 'Power outlet available' : 'No power outlet'}',
+              '${seat.acousticsDb} dB Â· ${seat.hasPowerOutlet ? 'Power outlet available' : 'No power outlet'}',
               style: _muted(12),
             ),
             const SizedBox(height: 16),

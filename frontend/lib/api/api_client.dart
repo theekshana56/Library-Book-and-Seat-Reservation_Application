@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/book.dart';
 import '../models/models.dart';
+import '../user_management/services/auth_storage.dart';
 import '../models/seat_booking.dart';
 
 class ApiException implements Exception {
@@ -54,11 +55,21 @@ class ApiClient {
   }
 
   Future<Reservation> reserveBook(String bookId) async {
+    String currentUserId = demoUserId;
+    try {
+      final user = await AuthStorage().getUser();
+      if (user != null &&
+          user.universityId != null &&
+          user.universityId!.isNotEmpty) {
+        currentUserId = user.universityId!;
+      }
+    } catch (_) {}
+
     final res = await http.post(
       Uri.parse('$baseUrl/api/v1/reservations'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'userId': demoUserId,
+        'userId': currentUserId,
         'bookId': bookId,
         'borrowerLabel': 'RW - 20248839',
         'studentCardId': '2024-9182',
@@ -87,9 +98,10 @@ class ApiClient {
     _ensureOk(res);
   }
 
-  Future<UserBookings> getBookings() async {
+  Future<UserBookings> getBookings([String? userId]) async {
+    final targetId = userId ?? demoUserId;
     final res = await http.get(
-      Uri.parse('$baseUrl/api/v1/users/$demoUserId/bookings'),
+      Uri.parse('$baseUrl/api/v1/users/$targetId/bookings'),
     );
     _ensureOk(res);
     return UserBookings.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
@@ -122,21 +134,15 @@ class ApiClient {
 
     _ensureOk(res);
 
-    return SeatBooking.fromJson(
-      jsonDecode(res.body) as Map<String, dynamic>,
-    );
+    return SeatBooking.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
   Future<SeatBooking> getSeatBooking(String id) async {
-    final res = await http.get(
-      Uri.parse('$baseUrl/api/v1/seat-bookings/$id'),
-    );
+    final res = await http.get(Uri.parse('$baseUrl/api/v1/seat-bookings/$id'));
 
     _ensureOk(res);
 
-    return SeatBooking.fromJson(
-      jsonDecode(res.body) as Map<String, dynamic>,
-    );
+    return SeatBooking.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
   Future<List<SeatBooking>> getUserSeatBookings({
@@ -151,11 +157,7 @@ class ApiClient {
     final list = jsonDecode(res.body) as List;
 
     return list
-        .map(
-          (item) => SeatBooking.fromJson(
-        item as Map<String, dynamic>,
-      ),
-    )
+        .map((item) => SeatBooking.fromJson(item as Map<String, dynamic>))
         .toList();
   }
 
@@ -164,41 +166,29 @@ class ApiClient {
     required String seatCode,
   }) async {
     final res = await http.post(
-      Uri.parse(
-        '$baseUrl/api/v1/seat-bookings/$bookingId/check-in',
-      ),
+      Uri.parse('$baseUrl/api/v1/seat-bookings/$bookingId/check-in'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'seatCode': seatCode,
-      }),
+      body: jsonEncode({'seatCode': seatCode}),
     );
 
     _ensureOk(res);
 
-    return SeatBooking.fromJson(
-      jsonDecode(res.body) as Map<String, dynamic>,
-    );
+    return SeatBooking.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
   Future<SeatBooking> cancelSeatBooking(String bookingId) async {
     final res = await http.post(
-      Uri.parse(
-        '$baseUrl/api/v1/seat-bookings/$bookingId/cancel',
-      ),
+      Uri.parse('$baseUrl/api/v1/seat-bookings/$bookingId/cancel'),
     );
 
     _ensureOk(res);
 
-    return SeatBooking.fromJson(
-      jsonDecode(res.body) as Map<String, dynamic>,
-    );
+    return SeatBooking.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
   Future<void> deleteSeatBooking(String bookingId) async {
     final res = await http.delete(
-      Uri.parse(
-        '$baseUrl/api/v1/seat-bookings/$bookingId',
-      ),
+      Uri.parse('$baseUrl/api/v1/seat-bookings/$bookingId'),
     );
 
     _ensureOk(res);
@@ -210,15 +200,15 @@ class ApiClient {
     required String startTime,
     required String endTime,
   }) async {
-    final uri = Uri.parse(
-      '$baseUrl/api/v1/seat-bookings/availability/$seatCode',
-    ).replace(
-      queryParameters: {
-        'date': date,
-        'startTime': startTime,
-        'endTime': endTime,
-      },
-    );
+    final uri =
+        Uri.parse('$baseUrl/api/v1/seat-bookings/availability/$seatCode')
+            .replace(
+              queryParameters: {
+                'date': date,
+                'startTime': startTime,
+                'endTime': endTime,
+              },
+            );
 
     final res = await http.get(uri);
 

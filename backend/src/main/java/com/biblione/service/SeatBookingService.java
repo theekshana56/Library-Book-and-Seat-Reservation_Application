@@ -11,19 +11,31 @@ import com.biblione.repository.SeatRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class SeatBookingService {
 
+    private static final Duration BOOKING_LOCK_LEASE =
+            Duration.ofMinutes(5);
+
     private final SeatBookingRepository seatBookingRepository;
     private final SeatRepository seatRepository;
+    private final MongoTemplate mongoTemplate;
 
     public List<SeatMapSeatResponse> getSeatMap(
             LocalDate date,
@@ -111,58 +123,38 @@ public class SeatBookingService {
                         )
                 );
 
-        boolean available =
-                isSeatAvailableInternal(
-                        seat.getSeatCode(),
-                        request.getBookingDate(),
-                        request.getStartTime(),
-                        request.getEndTime()
+        String lockToken = acquireBookingLock(seat.getId());
+        try {
+            boolean available =
+                    isSeatAvailableInternal(
+                            seat.getSeatCode(),
+                            request.getBookingDate(),
+                            request.getStartTime(),
+                            request.getEndTime()
+                    );
+
+            if (!available) {
+                throw new ApiException(
+                        HttpStatus.CONFLICT,
+                        "Seat is already reserved for the selected time"
                 );
+            }
 
-        if (!available) {
+            SeatBooking booking =
+                    SeatBooking.builder()
+                            .userId(request.getUserId())
+                            .seatCode(seat.getSeatCode())
+                            .bookingDate(request.getBookingDate())
+                            .startTime(request.getStartTime())
+                            .endTime(request.getEndTime())
+                            .status(SeatBookingStatus.RESERVED)
+                            .createdAt(LocalDateTime.now())
+                            .build();
 
-            throw new ApiException(
-                    HttpStatus.CONFLICT,
-                    "Seat is already reserved for the selected time"
-            );
+            return seatBookingRepository.save(booking);
+        } finally {
+            releaseBookingLock(seat.getId(), lockToken);
         }
-
-        SeatBooking booking =
-                SeatBooking.builder()
-
-                        .userId(
-                                request.getUserId()
-                        )
-
-                        .seatCode(
-                                seat.getSeatCode()
-                        )
-
-                        .bookingDate(
-                                request.getBookingDate()
-                        )
-
-                        .startTime(
-                                request.getStartTime()
-                        )
-
-                        .endTime(
-                                request.getEndTime()
-                        )
-
-                        .status(
-                                SeatBookingStatus.RESERVED
-                        )
-
-                        .createdAt(
-                                LocalDateTime.now()
-                        )
-
-                        .build();
-
-        return seatBookingRepository.save(
-                booking
-        );
     }
 
     public SeatBooking getBooking(
@@ -355,6 +347,51 @@ public class SeatBookingService {
                                         existing.getEndTime()
                                 )
                 );
+    }
+
+    private String acquireBookingLock(String seatId) {
+        Instant now = Instant.now();
+        String lockToken = UUID.randomUUID().toString();
+        Criteria availableLock = new Criteria().orOperator(
+                Criteria.where("bookingLockExpiresAt").is(null),
+                Criteria.where("bookingLockExpiresAt").lt(now)
+        );
+        Query query = Query.query(
+                new Criteria().andOperator(
+                        Criteria.where("id").is(seatId),
+                        availableLock
+                )
+        );
+        Update update = new Update()
+                .set("bookingLockToken", lockToken)
+                .set("bookingLockExpiresAt", now.plus(BOOKING_LOCK_LEASE));
+
+        Seat lockedSeat = mongoTemplate.findAndModify(
+                query,
+                update,
+                FindAndModifyOptions.options().returnNew(true),
+                Seat.class
+        );
+        if (lockedSeat == null) {
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "Seat is currently being booked. Please retry"
+            );
+        }
+        return lockToken;
+    }
+
+    private void releaseBookingLock(String seatId, String lockToken) {
+        Query query = Query.query(
+                Criteria.where("id")
+                        .is(seatId)
+                        .and("bookingLockToken")
+                        .is(lockToken)
+        );
+        Update update = new Update()
+                .unset("bookingLockToken")
+                .unset("bookingLockExpiresAt");
+        mongoTemplate.updateFirst(query, update, Seat.class);
     }
 
     private void validateTimeRange(

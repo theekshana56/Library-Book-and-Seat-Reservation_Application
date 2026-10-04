@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/book.dart';
@@ -234,7 +234,7 @@ class _StaffTaskAssignmentScreenState extends State<StaffTaskAssignmentScreen> {
           (user) => DropdownMenuItem(
             value: user.id,
             child: Text(
-              '${user.fullName} · ${user.department}',
+              '${user.fullName} Â· ${user.department}',
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -263,7 +263,7 @@ class _StaffTaskAssignmentScreenState extends State<StaffTaskAssignmentScreen> {
         (book) => DropdownMenuItem<String?>(
           value: book.id,
           child: Text(
-            '${book.title} · ${book.totalCopies} copies',
+            '${book.title} Â· ${book.totalCopies} copies',
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -290,7 +290,7 @@ class _StaffTaskAssignmentScreenState extends State<StaffTaskAssignmentScreen> {
           (shelf) => DropdownMenuItem(
             value: shelf.shelfCode,
             child: Text(
-              '${shelf.shelfCode} · ${shelf.level}',
+              '${shelf.shelfCode} Â· ${shelf.level}',
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -327,7 +327,7 @@ class _StaffTaskAssignmentScreenState extends State<StaffTaskAssignmentScreen> {
                   ),
                 ),
                 Text(
-                  '${task.assignedStaffName} · ${task.quantity} copies · ${task.targetShelfCode}',
+                  '${task.assignedStaffName} Â· ${task.quantity} copies Â· ${task.targetShelfCode}',
                   style: GoogleFonts.plusJakartaSans(
                     color: const Color(0xFF5B6B7C),
                     fontSize: 10,

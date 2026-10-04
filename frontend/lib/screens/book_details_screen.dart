@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../api/api_client.dart';
@@ -316,11 +316,11 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             ),
             child: Text(
               book.isAvailable
-                  ? '●  AVAILABLE NOW'
+                  ? 'â—  AVAILABLE NOW'
                   : book.inventoryStatus == 'PENDING_SHELVING' ||
                         book.shelfCode.trim().isEmpty
-                  ? '●  AWAITING SHELVING'
-                  : '●  IN CIRCULATION',
+                  ? 'â—  AWAITING SHELVING'
+                  : 'â—  IN CIRCULATION',
               textAlign: TextAlign.center,
               style: GoogleFonts.plusJakartaSans(
                 color: AppColors.mintText,

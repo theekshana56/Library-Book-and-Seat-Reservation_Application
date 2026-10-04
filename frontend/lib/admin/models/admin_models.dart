@@ -1,4 +1,4 @@
-class AdminUser {
+﻿class AdminUser {
   final String id;
   final String fullName;
   final String email;

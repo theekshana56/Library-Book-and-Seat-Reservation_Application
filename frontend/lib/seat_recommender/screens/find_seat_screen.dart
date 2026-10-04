@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
@@ -257,8 +257,8 @@ class _FindSeatScreenState extends State<FindSeatScreen> {
                   const SizedBox(height: 10),
                   Text(
                     DateUtils.isSameDay(_date, DateTime.now())
-                        ? 'Today’s starts require at least 2 hours’ notice.'
-                        : 'Start times use the library’s local time.',
+                        ? 'Todayâ€™s starts require at least 2 hoursâ€™ notice.'
+                        : 'Start times use the libraryâ€™s local time.',
                     style: _mutedStyle(10),
                   ),
                   const SizedBox(height: 9),
