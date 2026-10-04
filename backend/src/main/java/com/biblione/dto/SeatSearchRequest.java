@@ -1,4 +1,4 @@
-﻿package com.biblione.dto;
+package com.biblione.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

@@ -1,4 +1,4 @@
-﻿package com.biblione.admin.model;
+package com.biblione.admin.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
