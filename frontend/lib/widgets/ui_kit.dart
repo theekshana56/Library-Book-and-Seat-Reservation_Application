@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../theme/app_colors.dart';
 import '../notifications/screens/notification_screen.dart';
@@ -10,17 +11,13 @@ class BiblioneLogoMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A9B84),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Icon(
-        Icons.menu_book_rounded,
-        color: Colors.white,
-        size: size * 0.55,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: SvgPicture.asset(
+        'assets/brand/logo.svg',
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
       ),
     );
   }
@@ -116,7 +113,10 @@ class NavyAppHeader extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: const Color(0xFF3DDC97),
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.navy, width: 1.5),
+                            border: Border.all(
+                              color: AppColors.navy,
+                              width: 1.5,
+                            ),
                           ),
                         ),
                       ),
