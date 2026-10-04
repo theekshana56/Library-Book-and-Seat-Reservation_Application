@@ -1,6 +1,8 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../theme/app_colors.dart';
+import '../../widgets/ui_kit.dart';
 
 class BiblioneAuthScaffold extends StatelessWidget {
   final Widget body;
@@ -58,19 +60,7 @@ class BiblioneAuthScaffold extends StatelessWidget {
                       const SizedBox(width: 12),
                     ],
                     // Brand mark
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF00875A),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.menu_book_rounded,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                    ),
+                    const BiblioneLogoMark(size: 32),
                     const SizedBox(width: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,7 +108,8 @@ class BiblioneAuthScaffold extends StatelessWidget {
                           borderRadius: BorderRadius.circular(18),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF00875A).withValues(alpha: 0.25),
+                              color: const Color(0xFF00875A)
+                                  .withValues(alpha: 0.25),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
