@@ -10,7 +10,7 @@ class _HomeApi extends ApiClient {
   bool failFirstRequest = false;
 
   @override
-  Future<UserBookings> getBookings() async {
+  Future<UserBookings> getBookings([String? userId]) async {
     calls++;
     if (failFirstRequest && calls == 1) {
       throw ApiException('API unavailable');

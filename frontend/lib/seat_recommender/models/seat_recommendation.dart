@@ -1,4 +1,4 @@
-class SeatSearchRequest {
+﻿class SeatSearchRequest {
   final DateTime date;
   final String startTime;
   final int durationMinutes;

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_colors.dart';
@@ -157,7 +157,7 @@ class _ShelfManagementScreenState extends State<ShelfManagementScreen> {
                       AdminField(
                         label: 'Category zone',
                         controller: _zone,
-                        hint: 'Quiet Zone · East Wing',
+                        hint: 'Quiet Zone Â· East Wing',
                         validator: _required,
                       ),
                       const SizedBox(height: 10),
@@ -266,7 +266,7 @@ class _ShelfManagementScreenState extends State<ShelfManagementScreen> {
                         ),
                       ),
                       Text(
-                        '${shelf.level} · ${shelf.zone}',
+                        '${shelf.level} Â· ${shelf.zone}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.plusJakartaSans(

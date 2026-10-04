@@ -6,6 +6,7 @@ import com.biblione.model.Book;
 import com.biblione.model.Loan;
 import com.biblione.model.Reservation;
 import com.biblione.model.WaitlistEntry;
+import com.biblione.notification.service.NotificationService;
 import com.biblione.repository.BookRepository;
 import com.biblione.repository.LoanRepository;
 import com.biblione.repository.ReservationRepository;
@@ -42,13 +43,21 @@ class BookReservationServiceTest {
     private SeatHoldRepository seatHoldRepository;
     @Mock
     private WaitlistRepository waitlistRepository;
+    @Mock
+    private NotificationService notificationService;
 
     private BookReservationService service;
 
     @BeforeEach
     void setUp() {
         service = new BookReservationService(
-            bookRepository, reservationRepository, loanRepository, seatHoldRepository, waitlistRepository);
+            bookRepository,
+            reservationRepository,
+            loanRepository,
+            seatHoldRepository,
+            waitlistRepository,
+            notificationService
+        );
     }
 
     @Test

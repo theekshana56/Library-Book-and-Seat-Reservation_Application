@@ -12,6 +12,8 @@ import 'package:biblione/api/api_client.dart';
 import 'package:biblione/debug_agent_log.dart';
 import 'package:biblione/main.dart';
 import 'package:biblione/models/book.dart';
+import 'package:biblione/user_management/widgets/auth_gate.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:biblione/screens/search_catalog_screen.dart';
 
 class FakeApiClient extends ApiClient {
@@ -26,6 +28,9 @@ class FakeApiClient extends ApiClient {
 }
 
 void main() {
+  setUp(() {
+    FlutterSecureStorage.setMockInitialValues({});
+  });
   testWidgets('search catalog does not update state after disposal', (
     WidgetTester tester,
   ) async {
@@ -45,13 +50,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('app builds and exposes the main shell', (
+  testWidgets('app builds and exposes the auth gate', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const BiblioneApp());
 
     expect(find.byType(MaterialApp), findsOneWidget);
-    expect(find.byType(BiblioneShell), findsOneWidget);
+    expect(find.byType(AuthGate), findsOneWidget);
   });
 
   testWidgets('vendor submit and reload do not break the pushed admin route', (

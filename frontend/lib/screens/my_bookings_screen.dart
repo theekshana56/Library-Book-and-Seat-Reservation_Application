@@ -1,4 +1,4 @@
-import 'package:barcode_widget/barcode_widget.dart';
+﻿import 'package:barcode_widget/barcode_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -371,7 +371,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'CS-${r.shelfCode.contains('-') ? r.shelfCode.split('-').last : r.shelfCode} · L2 Stacks 8',
+                        'CS-${r.shelfCode.contains('-') ? r.shelfCode.split('-').last : r.shelfCode} Â· L2 Stacks 8',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -652,7 +652,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            child: const Text('↻  Renew'),
+            child: const Text('â†»  Renew'),
           ),
         ],
       ),
