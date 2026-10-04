@@ -14,10 +14,12 @@ const _googleBooksApiKey = String.fromEnvironment('GOOGLE_BOOKS_API_KEY');
 class PublisherProposalFormScreen extends StatefulWidget {
   final String initialVendorId;
   final AdminApiClient? apiClient;
+  final http.Client? googleBooksClient;
   const PublisherProposalFormScreen({
     super.key,
     this.initialVendorId = 'seed-vendor',
     this.apiClient,
+    this.googleBooksClient,
   });
 
   @override
@@ -28,6 +30,8 @@ class PublisherProposalFormScreen extends StatefulWidget {
 class _PublisherProposalFormScreenState
     extends State<PublisherProposalFormScreen> {
   late final AdminApiClient _api;
+  late final http.Client _googleBooksClient;
+  late final bool _ownsGoogleBooksClient;
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _vendorId;
   late final TextEditingController _title;
@@ -48,6 +52,8 @@ class _PublisherProposalFormScreenState
   void initState() {
     super.initState();
     _api = widget.apiClient ?? AdminApiClient();
+    _ownsGoogleBooksClient = widget.googleBooksClient == null;
+    _googleBooksClient = widget.googleBooksClient ?? http.Client();
     _vendorId = TextEditingController(text: widget.initialVendorId);
     _title = TextEditingController();
     _author = TextEditingController();
@@ -79,6 +85,7 @@ class _PublisherProposalFormScreenState
     _price.dispose();
     _quantity.dispose();
     _coverUrl.dispose();
+    if (_ownsGoogleBooksClient) _googleBooksClient.close();
     super.dispose();
   }
 
@@ -172,15 +179,13 @@ class _PublisherProposalFormScreenState
         'q': 'isbn:$isbn',
         if (_googleBooksApiKey.isNotEmpty) 'key': _googleBooksApiKey,
       });
-      final response = await http.get(uri).timeout(const Duration(seconds: 12));
+      final response = await _googleBooksClient
+          .get(uri)
+          .timeout(const Duration(seconds: 12));
       if (!mounted) return;
       if (response.statusCode != 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Google Books lookup failed (${response.statusCode}). Check your API key and try again.',
-            ),
-          ),
+          SnackBar(content: Text(_googleBooksFailureMessage(response))),
         );
         return;
       }
@@ -253,16 +258,45 @@ class _PublisherProposalFormScreenState
           const SnackBar(content: Text('Invalid response from Google Books.')),
         );
       }
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Unable to reach Google Books. Please try again.'),
+          SnackBar(
+            content: Text(
+              'Unable to reach Google Books: $error',
+            ),
           ),
         );
       }
     } finally {
       if (mounted) setState(() => _lookingUpIsbn = false);
+    }
+  }
+
+  String _googleBooksFailureMessage(http.Response response) {
+    String? message;
+    try {
+      final body = jsonDecode(response.body);
+      if (body is Map && body['error'] is Map) {
+        final error = body['error'] as Map;
+        final value = error['message']?.toString().trim();
+        if (value != null && value.isNotEmpty) message = value;
+      }
+    } on FormatException {
+      // Use the HTTP status to report failures with non-JSON response bodies.
+    }
+
+    switch (response.statusCode) {
+      case 400:
+        return 'Google Books rejected the ISBN lookup. Check the ISBN and try again.';
+      case 403:
+        return 'Google Books denied the request. Check that the Books API is enabled and the API key restrictions allow this app.';
+      case 429:
+        return 'Google Books request limit reached. Check the API quota in Google Cloud or try again later.';
+      default:
+        return message == null
+            ? 'Google Books lookup failed (HTTP ${response.statusCode}).'
+            : 'Google Books lookup failed (HTTP ${response.statusCode}): $message';
     }
   }
 

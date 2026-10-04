@@ -339,10 +339,7 @@ class _ProposalReviewDialogState extends State<_ProposalReviewDialog> {
       message: 'dialog state disposing controllers',
       hypothesisId: 'A',
       runId: 'post-fix',
-      data: {
-        'qtyListeners': _quantity.hasListeners,
-        'msgListeners': _message.hasListeners,
-      },
+      data: {'controllersDisposed': true},
     );
     // #endregion
     _quantity.dispose();

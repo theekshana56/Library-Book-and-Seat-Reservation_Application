@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../main.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/ui_kit.dart';
@@ -50,6 +51,10 @@ class _AuthGateState extends State<AuthGate> {
           return const _AuthSplashView();
         }
 
+        if (_authController.isAuthenticated) {
+          return BiblioneShell(authController: _authController);
+        }
+
         if (_showOnboarding) {
           return OnboardingScreen(
             onComplete: () {
@@ -58,10 +63,6 @@ class _AuthGateState extends State<AuthGate> {
               });
             },
           );
-        }
-
-        if (_authController.isAuthenticated) {
-          return BiblioneShell(authController: _authController);
         }
 
         return LoginScreen(authController: _authController);

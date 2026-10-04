@@ -1,4 +1,4 @@
-﻿package com.biblione.admin.model;
+package com.biblione.admin.model;
 
 public enum ProposalStatus {
     PENDING_ADMIN_REVIEW,

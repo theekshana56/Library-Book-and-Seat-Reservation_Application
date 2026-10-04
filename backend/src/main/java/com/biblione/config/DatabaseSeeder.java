@@ -1,4 +1,4 @@
-﻿package com.biblione.config;
+package com.biblione.config;
 
 import com.biblione.admin.model.AdminUser;
 import com.biblione.admin.model.Shelf;

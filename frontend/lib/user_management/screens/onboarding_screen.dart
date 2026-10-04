@@ -70,7 +70,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   // Header
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -79,7 +82,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
+                                color: Colors.white.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(
@@ -117,7 +120,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           onPressed: widget.onComplete,
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
@@ -138,7 +144,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Container(
                       decoration: const BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(32),
+                        ),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(24.0),
@@ -150,7 +158,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFE0E7FF),
                                     borderRadius: BorderRadius.circular(16),
@@ -186,7 +197,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ],
                             ),
                             const SizedBox(height: 24),
-                            
+
                             // Sliding Content (Image, Title, Description)
                             Expanded(
                               child: PageView.builder(
@@ -203,7 +214,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                     children: [
                                       Expanded(
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(24),
+                                          borderRadius: BorderRadius.circular(
+                                            24,
+                                          ),
                                           child: Image.network(
                                             data.imageUrl,
                                             fit: BoxFit.cover,
@@ -234,20 +247,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                       if (index == 2) ...[
                                         const SizedBox(height: 16),
                                         Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
-                                            _buildCheckBadge('Hold Notifications'),
+                                            _buildCheckBadge(
+                                              'Hold Notifications',
+                                            ),
                                             const SizedBox(width: 8),
                                             _buildCheckBadge('Desk Extensions'),
                                           ],
-                                        )
+                                        ),
                                       ],
                                     ],
                                   );
                                 },
                               ),
                             ),
-                            
+
                             const SizedBox(height: 24),
                             // Dots Indicator
                             Row(
@@ -256,11 +272,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 3,
                                 (i) => AnimatedContainer(
                                   duration: const Duration(milliseconds: 300),
-                                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
                                   width: _currentIndex == i ? 24 : 8,
                                   height: 8,
                                   decoration: BoxDecoration(
-                                    color: _currentIndex == i ? AppColors.emerald : Colors.grey.shade300,
+                                    color: _currentIndex == i
+                                        ? AppColors.emerald
+                                        : Colors.grey.shade300,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                 ),
@@ -276,9 +296,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  _buildTab('Seats', Icons.chair_alt_rounded, 0),
-                                  _buildTab('Books', Icons.menu_book_rounded, 1),
-                                  _buildTab('Alerts', Icons.notifications_rounded, 2),
+                                  _buildTab(
+                                    'Seats',
+                                    Icons.chair_alt_rounded,
+                                    0,
+                                  ),
+                                  _buildTab(
+                                    'Books',
+                                    Icons.menu_book_rounded,
+                                    1,
+                                  ),
+                                  _buildTab(
+                                    'Alerts',
+                                    Icons.notifications_rounded,
+                                    2,
+                                  ),
                                 ],
                               ),
                             ),
@@ -289,7 +321,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.emerald,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -306,7 +340,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  const Icon(Icons.arrow_forward_rounded, size: 20),
+                                  const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 20,
+                                  ),
                                 ],
                               ),
                             ),
@@ -318,7 +355,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 if (_currentIndex == 2)
                                   const Padding(
                                     padding: EdgeInsets.only(right: 6.0),
-                                    child: Icon(Icons.check_circle_rounded, color: AppColors.textMuted, size: 16),
+                                    child: Icon(
+                                      Icons.check_circle_rounded,
+                                      color: AppColors.textMuted,
+                                      size: 16,
+                                    ),
                                   ),
                                 Text(
                                   currentData.footerText,
@@ -350,7 +391,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.emerald.withOpacity(0.1),
+        color: AppColors.emerald.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -381,14 +422,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isActive ? Colors.white : Colors.white.withOpacity(0.0),
+            color: isActive
+                ? Colors.white
+                : Colors.white.withValues(alpha: 0.0),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: isActive ? Colors.black.withOpacity(0.05) : Colors.black.withOpacity(0.0),
+                color: isActive
+                    ? Colors.black.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.0),
                 blurRadius: isActive ? 4 : 0,
                 offset: isActive ? const Offset(0, 2) : Offset.zero,
-              )
+              ),
             ],
           ),
           child: Row(

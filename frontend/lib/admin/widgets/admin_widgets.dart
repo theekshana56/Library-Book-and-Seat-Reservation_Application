@@ -159,22 +159,6 @@ class AdminField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // #region agent log
-    var controllerDisposed = false;
-    try {
-      controller.hasListeners;
-    } catch (_) {
-      controllerDisposed = true;
-    }
-    if (controllerDisposed) {
-      agentDebugLog(
-        location: 'admin_widgets.dart:AdminField',
-        message: 'AdminField built with disposed controller',
-        hypothesisId: 'B',
-        data: {'label': label},
-      );
-    }
-    // #endregion
     return TextFormField(
     controller: controller,
     keyboardType: keyboardType,
