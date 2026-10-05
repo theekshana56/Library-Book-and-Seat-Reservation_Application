@@ -48,6 +48,7 @@ public class Book {
     private String isbn;
     private String inventoryStatus;
     private String proposalId;
+    private Boolean active;
 
     @Version
     private Long version;

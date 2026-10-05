@@ -10,4 +10,6 @@ public interface ReservationRepository extends MongoRepository<Reservation, Stri
     List<Reservation> findByUserIdAndStatusIn(String userId, List<String> statuses);
 
     boolean existsByUserIdAndBookIdAndStatusIn(String userId, String bookId, List<String> statuses);
+
+    long countByBookIdAndStatusIn(String bookId, List<String> statuses);
 }
