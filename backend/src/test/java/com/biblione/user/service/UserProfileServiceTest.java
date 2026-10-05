@@ -42,7 +42,7 @@ class UserProfileServiceTest {
     void getCurrentProfile_success() {
         AuthenticatedUser currentUser = new AuthenticatedUser(
                 "user-1", "IT20240001", "Jane Doe", "jane@biblione.edu",
-                UserRole.STUDENT, "CS", "STUDENT", true, "hash-1"
+                UserRole.STUDENT, "CS", "STUDENT", null, true, "hash-1"
         );
 
         AdminUser dbUser = AdminUser.builder()
@@ -69,7 +69,7 @@ class UserProfileServiceTest {
     void updateProfile_success() {
         AuthenticatedUser currentUser = new AuthenticatedUser(
                 "user-1", "IT20240001", "Jane Doe", "jane@biblione.edu",
-                UserRole.STUDENT, "CS", "STUDENT", true, "hash-1"
+                UserRole.STUDENT, "CS", "STUDENT", null, true, "hash-1"
         );
 
         AdminUser dbUser = AdminUser.builder()
@@ -97,7 +97,7 @@ class UserProfileServiceTest {
     void updateProfile_failsOnDuplicateEmailByAnotherUser() {
         AuthenticatedUser currentUser = new AuthenticatedUser(
                 "user-1", "IT20240001", "Jane Doe", "jane@biblione.edu",
-                UserRole.STUDENT, "CS", "STUDENT", true, "hash-1"
+                UserRole.STUDENT, "CS", "STUDENT", null, true, "hash-1"
         );
 
         AdminUser dbUser = AdminUser.builder()
@@ -126,7 +126,7 @@ class UserProfileServiceTest {
     void changePassword_success() {
         AuthenticatedUser currentUser = new AuthenticatedUser(
                 "user-1", "IT20240001", "Jane Doe", "jane@biblione.edu",
-                UserRole.STUDENT, "CS", "STUDENT", true, "hash-1"
+                UserRole.STUDENT, "CS", "STUDENT", null, true, "hash-1"
         );
 
         AdminUser dbUser = AdminUser.builder()
@@ -152,7 +152,7 @@ class UserProfileServiceTest {
     void changePassword_failsOnWrongCurrentPassword() {
         AuthenticatedUser currentUser = new AuthenticatedUser(
                 "user-1", "IT20240001", "Jane Doe", "jane@biblione.edu",
-                UserRole.STUDENT, "CS", "STUDENT", true, "hash-1"
+                UserRole.STUDENT, "CS", "STUDENT", null, true, "hash-1"
         );
 
         AdminUser dbUser = AdminUser.builder()

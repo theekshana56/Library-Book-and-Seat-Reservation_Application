@@ -114,4 +114,31 @@ class BearerTokenAuthenticationFilterTest {
         verify(filterChain).doFilter(request, response);
         verify(request).setAttribute(eq("authenticatedUser"), any(AuthenticatedUser.class));
     }
+
+    @Test
+    void doFilter_forbidsStudentFromAdminPath() throws ServletException, IOException {
+        when(request.getHeader("Authorization")).thenReturn("Bearer student-token");
+        when(request.getRequestURI()).thenReturn("/api/v1/admin/stats");
+        when(tokenService.hashToken("student-token")).thenReturn("student-hash");
+        when(sessionRepository.findByTokenHashAndRevokedFalse("student-hash"))
+                .thenReturn(Optional.of(AuthSession.builder()
+                        .tokenHash("student-hash")
+                        .userId("student-1")
+                        .expiresAt(Instant.now().plus(1, ChronoUnit.DAYS))
+                        .revoked(false)
+                        .build()));
+        when(userRepository.findById("student-1"))
+                .thenReturn(Optional.of(AdminUser.builder()
+                        .id("student-1")
+                        .email("student@example.edu")
+                        .role(UserRole.STUDENT)
+                        .active(true)
+                        .build()));
+        when(response.getWriter()).thenReturn(new PrintWriter(new StringWriter()));
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        verify(response).setStatus(403);
+        verify(filterChain, never()).doFilter(any(), any());
+    }
 }

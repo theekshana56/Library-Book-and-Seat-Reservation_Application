@@ -11,6 +11,7 @@ import com.biblione.user.dto.AuthResponse;
 import com.biblione.user.dto.LoginRequest;
 import com.biblione.user.dto.RegisterRequest;
 import com.biblione.user.dto.UserResponse;
+import com.biblione.user.dto.VendorRegistrationRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -65,6 +66,31 @@ public class AuthService {
         return UserResponse.from(savedUser);
     }
 
+    public UserResponse registerVendor(VendorRegistrationRequest request) {
+        if (!request.password().equals(request.confirmPassword())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Password and confirmation do not match.");
+        }
+
+        String email = request.email().trim().toLowerCase(Locale.ROOT);
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+            throw new ApiException(HttpStatus.CONFLICT, "An account with this email already exists.");
+        }
+
+        AdminUser vendor = AdminUser.builder()
+                .fullName(request.fullName().trim())
+                .vendorCompanyName(request.companyName().trim())
+                .email(email)
+                .password(passwordEncoder.encode(request.password()))
+                .role(UserRole.VENDOR)
+                .active(false)
+                .userCategory("VENDOR")
+                .build();
+
+        AdminUser savedVendor = userRepository.save(vendor);
+        log.info("Registered vendor application: id={}, email={}", savedVendor.getId(), savedVendor.getEmail());
+        return UserResponse.from(savedVendor);
+    }
+
     public AuthResponse login(LoginRequest request) {
         String identifier = request.resolveIdentifier();
         if (identifier.isBlank()) {
@@ -83,6 +109,9 @@ public class AuthService {
 
         AdminUser user = userOpt.get();
         if (!user.isActive()) {
+            if (user.getRole() == UserRole.VENDOR) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "Your vendor account is inactive. Please contact the library administrator.");
+            }
             throw new ApiException(HttpStatus.FORBIDDEN, "Your account is inactive. Please contact the library administrator.");
         }
 
