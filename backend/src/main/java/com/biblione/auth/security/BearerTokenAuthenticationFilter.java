@@ -100,7 +100,9 @@ public class BearerTokenAuthenticationFilter extends OncePerRequestFilter {
 
     private boolean isProtectedPath(HttpServletRequest request) {
         String path = request.getRequestURI();
-        if (path.startsWith("/api/v1/admin/") || path.startsWith("/api/v1/publisher/")) {
+        if (path.startsWith("/api/v1/admin/")
+                || path.startsWith("/api/v1/publisher/")
+                || path.startsWith("/api/v1/staff/")) {
             return true;
         }
         if (path.startsWith("/api/v1/users/me")) {
@@ -131,6 +133,9 @@ public class BearerTokenAuthenticationFilter extends OncePerRequestFilter {
         }
         if (path.startsWith("/api/v1/publisher/")) {
             return user != null && user.role() == UserRole.VENDOR;
+        }
+        if (path.startsWith("/api/v1/staff/")) {
+            return user != null && user.role() == UserRole.LIBRARY_STAFF;
         }
         return true;
     }

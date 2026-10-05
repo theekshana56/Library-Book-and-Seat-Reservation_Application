@@ -114,6 +114,40 @@ class AdminApiClient {
           .map(StaffTask.fromJson)
           .toList();
 
+  Future<List<StaffTask>> getMyStaffTasks() async =>
+      (await _list(
+        await _http.get(
+          _uri('/api/v1/staff/tasks'),
+          headers: await _headers,
+        ),
+      ))
+          .map(StaffTask.fromJson)
+          .toList();
+
+  Future<StaffTask> updateMyTask(
+    String id,
+    String status, {
+    String? shelfCode,
+  }) async => StaffTask.fromJson(
+    await _map(
+      await _http.put(
+        _uri('/api/v1/staff/tasks/$id/status'),
+        headers: await _headers,
+        body: jsonEncode({'status': status, 'targetShelfCode': shelfCode}),
+      ),
+    ),
+  );
+
+  Future<List<LibraryShelf>> getStaffShelves() async =>
+      (await _list(
+        await _http.get(
+          _uri('/api/v1/staff/shelves'),
+          headers: await _headers,
+        ),
+      ))
+          .map(LibraryShelf.fromJson)
+          .toList();
+
   Future<StaffTask> assignTask(Map<String, dynamic> payload) async =>
       StaffTask.fromJson(
         await _map(
