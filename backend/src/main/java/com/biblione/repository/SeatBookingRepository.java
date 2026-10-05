@@ -19,4 +19,7 @@ public interface SeatBookingRepository
             LocalDate bookingDate,
             List<SeatBookingStatus> statuses
     );
+
+    long countBySeatCodeIgnoreCaseAndStatusIn(String seatCode, List<SeatBookingStatus> statuses);
+    boolean existsBySeatCodeIgnoreCase(String seatCode);
 }

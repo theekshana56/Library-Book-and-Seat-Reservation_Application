@@ -114,4 +114,83 @@ class BearerTokenAuthenticationFilterTest {
         verify(filterChain).doFilter(request, response);
         verify(request).setAttribute(eq("authenticatedUser"), any(AuthenticatedUser.class));
     }
+
+    @Test
+    void doFilter_forbidsStudentFromAdminPath() throws ServletException, IOException {
+        when(request.getHeader("Authorization")).thenReturn("Bearer student-token");
+        when(request.getRequestURI()).thenReturn("/api/v1/admin/stats");
+        when(tokenService.hashToken("student-token")).thenReturn("student-hash");
+        when(sessionRepository.findByTokenHashAndRevokedFalse("student-hash"))
+                .thenReturn(Optional.of(AuthSession.builder()
+                        .tokenHash("student-hash")
+                        .userId("student-1")
+                        .expiresAt(Instant.now().plus(1, ChronoUnit.DAYS))
+                        .revoked(false)
+                        .build()));
+        when(userRepository.findById("student-1"))
+                .thenReturn(Optional.of(AdminUser.builder()
+                        .id("student-1")
+                        .email("student@example.edu")
+                        .role(UserRole.STUDENT)
+                        .active(true)
+                        .build()));
+        when(response.getWriter()).thenReturn(new PrintWriter(new StringWriter()));
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        verify(response).setStatus(403);
+        verify(filterChain, never()).doFilter(any(), any());
+    }
+
+    @Test
+    void doFilter_allowsLibraryStaffOnStaffWorkspacePath() throws ServletException, IOException {
+        when(request.getHeader("Authorization")).thenReturn("Bearer staff-token");
+        when(request.getRequestURI()).thenReturn("/api/v1/staff/tasks");
+        when(tokenService.hashToken("staff-token")).thenReturn("staff-hash");
+        when(sessionRepository.findByTokenHashAndRevokedFalse("staff-hash"))
+                .thenReturn(Optional.of(AuthSession.builder()
+                        .tokenHash("staff-hash")
+                        .userId("staff-1")
+                        .expiresAt(Instant.now().plus(1, ChronoUnit.DAYS))
+                        .revoked(false)
+                        .build()));
+        when(userRepository.findById("staff-1"))
+                .thenReturn(Optional.of(AdminUser.builder()
+                        .id("staff-1")
+                        .email("staff@example.edu")
+                        .role(UserRole.LIBRARY_STAFF)
+                        .active(true)
+                        .build()));
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+    void doFilter_forbidsLibraryStaffFromAdminAccountManagement() throws ServletException, IOException {
+        when(request.getHeader("Authorization")).thenReturn("Bearer staff-token");
+        when(request.getRequestURI()).thenReturn("/api/v1/admin/users");
+        when(tokenService.hashToken("staff-token")).thenReturn("staff-hash");
+        when(sessionRepository.findByTokenHashAndRevokedFalse("staff-hash"))
+                .thenReturn(Optional.of(AuthSession.builder()
+                        .tokenHash("staff-hash")
+                        .userId("staff-1")
+                        .expiresAt(Instant.now().plus(1, ChronoUnit.DAYS))
+                        .revoked(false)
+                        .build()));
+        when(userRepository.findById("staff-1"))
+                .thenReturn(Optional.of(AdminUser.builder()
+                        .id("staff-1")
+                        .email("staff@example.edu")
+                        .role(UserRole.LIBRARY_STAFF)
+                        .active(true)
+                        .build()));
+        when(response.getWriter()).thenReturn(new PrintWriter(new StringWriter()));
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        verify(response).setStatus(403);
+        verify(filterChain, never()).doFilter(any(), any());
+    }
 }

@@ -17,6 +17,7 @@ class MockAuthApiClient extends AuthApiClient {
   AuthSession? mockSession;
   bool shouldThrow = false;
   String errorMessage = 'Mock error';
+  String? registeredVendorCompany;
 
   @override
   Future<AuthSession> login({
@@ -27,7 +28,8 @@ class MockAuthApiClient extends AuthApiClient {
     return mockSession ??
         AuthSession(
           token: 'mock-token',
-          user: mockProfile ??
+          user:
+              mockProfile ??
               const UserProfile(
                 id: 'u-1',
                 universityId: 'IT23773158',
@@ -56,6 +58,26 @@ class MockAuthApiClient extends AuthApiClient {
       email: email,
       role: 'STUDENT',
       active: true,
+    );
+  }
+
+  @override
+  Future<UserProfile> registerVendor({
+    required String fullName,
+    required String companyName,
+    required String email,
+    required String password,
+    required String confirmPassword,
+  }) async {
+    if (shouldThrow) throw Exception(errorMessage);
+    registeredVendorCompany = companyName;
+    return UserProfile(
+      id: 'vendor-1',
+      fullName: fullName,
+      email: email,
+      role: 'VENDOR',
+      vendorCompanyName: companyName,
+      active: false,
     );
   }
 
@@ -156,23 +178,26 @@ void main() {
   });
 
   group('AuthStorage & AuthController', () {
-    test('AuthStorage persists and clears session in memory fallback', () async {
-      final storage = AuthStorage();
-      const user = UserProfile(
-        id: 'u-1',
-        fullName: 'Jane Doe',
-        email: 'jane@biblione.edu',
-        role: 'STUDENT',
-      );
+    test(
+      'AuthStorage persists and clears session in memory fallback',
+      () async {
+        final storage = AuthStorage();
+        const user = UserProfile(
+          id: 'u-1',
+          fullName: 'Jane Doe',
+          email: 'jane@biblione.edu',
+          role: 'STUDENT',
+        );
 
-      await storage.saveSession(token: 'test-token', user: user);
-      expect(await storage.getToken(), 'test-token');
-      expect((await storage.getUser())?.email, 'jane@biblione.edu');
+        await storage.saveSession(token: 'test-token', user: user);
+        expect(await storage.getToken(), 'test-token');
+        expect((await storage.getUser())?.email, 'jane@biblione.edu');
 
-      await storage.clearSession();
-      expect(await storage.getToken(), isNull);
-      expect(await storage.getUser(), isNull);
-    });
+        await storage.clearSession();
+        expect(await storage.getToken(), isNull);
+        expect(await storage.getUser(), isNull);
+      },
+    );
 
     test('AuthController logs in, updates profile, and logs out', () async {
       final mockApi = MockAuthApiClient();
@@ -202,6 +227,26 @@ void main() {
       expect(controller.isAuthenticated, isFalse);
       expect(controller.currentUser, isNull);
     });
+
+    test('AuthController submits external vendor registration', () async {
+      final mockApi = MockAuthApiClient();
+      final controller = AuthController(
+        apiClient: mockApi,
+        storage: AuthStorage(),
+      );
+
+      final registered = await controller.registerVendor(
+        fullName: 'Morgan Lee',
+        companyName: 'North Books Ltd.',
+        email: 'morgan@northbooks.example',
+        password: 'password123',
+        confirmPassword: 'password123',
+      );
+
+      expect(registered, isTrue);
+      expect(mockApi.registeredVendorCompany, 'North Books Ltd.');
+      expect(controller.isAuthenticated, isFalse);
+    });
   });
 
   group('User Management UI Widgets', () {
@@ -216,16 +261,17 @@ void main() {
       });
 
       final mockApi = MockAuthApiClient();
-      final controller = AuthController(apiClient: mockApi, storage: AuthStorage());
+      final controller = AuthController(
+        apiClient: mockApi,
+        storage: AuthStorage(),
+      );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: LoginScreen(authController: controller),
-        ),
+        MaterialApp(home: LoginScreen(authController: controller)),
       );
 
       expect(find.text('Log In'), findsWidgets);
-      expect(find.text('University ID'), findsOneWidget);
+      expect(find.text('Email or University ID'), findsOneWidget);
       expect(find.text('Password'), findsOneWidget);
       expect(find.text('Sign up'), findsOneWidget);
 
@@ -234,80 +280,109 @@ void main() {
       await tester.tap(loginBtn);
       await tester.pump();
 
-      expect(find.text('Please enter your University ID or Email'), findsOneWidget);
+      expect(
+        find.text('Please enter your email or University ID'),
+        findsOneWidget,
+      );
       expect(find.text('Please enter your password'), findsOneWidget);
     });
 
-    testWidgets('RegistrationScreen validates form fields and matching passwords', (
+    testWidgets(
+      'RegistrationScreen validates form fields and matching passwords',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        final mockApi = MockAuthApiClient();
+        final controller = AuthController(
+          apiClient: mockApi,
+          storage: AuthStorage(),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(home: RegistrationScreen(authController: controller)),
+        );
+
+        expect(find.text('Create Account'), findsWidgets);
+        expect(find.text('Full Name'), findsOneWidget);
+
+        final createBtn = find.widgetWithText(FilledButton, 'Create Account');
+        await tester.ensureVisible(createBtn);
+        await tester.tap(createBtn);
+        await tester.pump();
+
+        expect(find.text('Full name is required'), findsOneWidget);
+        expect(find.text('University ID is required'), findsOneWidget);
+        expect(find.text('Email is required'), findsOneWidget);
+      },
+    );
+
+    testWidgets('RegistrationScreen shows a university-ID-free vendor form', (
       WidgetTester tester,
     ) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      final mockApi = MockAuthApiClient();
-      final controller = AuthController(apiClient: mockApi, storage: AuthStorage());
-
+      final controller = AuthController(
+        apiClient: MockAuthApiClient(),
+        storage: AuthStorage(),
+      );
       await tester.pumpWidget(
-        MaterialApp(
-          home: RegistrationScreen(authController: controller),
-        ),
+        MaterialApp(home: RegistrationScreen(authController: controller)),
       );
 
-      expect(find.text('Create Account'), findsWidgets);
-      expect(find.text('Full Name'), findsOneWidget);
+      await tester.tap(find.text('Vendor'));
+      await tester.pumpAndSettle();
 
-      final createBtn = find.widgetWithText(FilledButton, 'Create Account');
-      await tester.ensureVisible(createBtn);
-      await tester.tap(createBtn);
-      await tester.pump();
-
-      expect(find.text('Full name is required'), findsOneWidget);
-      expect(find.text('University ID is required'), findsOneWidget);
-      expect(find.text('Email is required'), findsOneWidget);
+      expect(find.text('Company / Publisher Name'), findsOneWidget);
+      expect(find.text('University ID'), findsNothing);
+      expect(find.text('Email Address'), findsOneWidget);
+      expect(find.text('Submit application'), findsOneWidget);
     });
 
-    testWidgets('ProfileScreen renders user details and handles logout dialog', (
-      WidgetTester tester,
-    ) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+    testWidgets(
+      'ProfileScreen renders user details and handles logout dialog',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
 
-      final mockApi = MockAuthApiClient();
-      final storage = AuthStorage();
-      final controller = AuthController(apiClient: mockApi, storage: storage);
+        final mockApi = MockAuthApiClient();
+        final storage = AuthStorage();
+        final controller = AuthController(apiClient: mockApi, storage: storage);
 
-      await controller.login(identifier: 'IT23773158', password: 'password123');
+        await controller.login(
+          identifier: 'IT23773158',
+          password: 'password123',
+        );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(body: ProfileScreen(authController: controller)),
-        ),
-      );
-      await tester.pump();
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(body: ProfileScreen(authController: controller)),
+          ),
+        );
+        await tester.pump();
 
-      expect(find.text('My Profile'), findsOneWidget);
-      expect(find.text('Ravindu Weerasinghe'), findsOneWidget);
-      expect(find.text('IT23773158'), findsOneWidget);
-      expect(find.text('student@biblione.edu'), findsOneWidget);
-      expect(find.text('Edit Profile'), findsOneWidget);
-      expect(find.text('Change Password'), findsOneWidget);
-      expect(find.text('Log Out'), findsOneWidget);
+        expect(find.text('My Profile'), findsOneWidget);
+        expect(find.text('Ravindu Weerasinghe'), findsOneWidget);
+        expect(find.text('IT23773158'), findsOneWidget);
+        expect(find.text('student@biblione.edu'), findsOneWidget);
+        expect(find.text('Edit Profile'), findsOneWidget);
+        expect(find.text('Change Password'), findsOneWidget);
+        expect(find.text('Log Out'), findsOneWidget);
 
-      await tester.ensureVisible(find.text('Log Out'));
-      await tester.tap(find.text('Log Out'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
+        await tester.ensureVisible(find.text('Log Out'));
+        await tester.tap(find.text('Log Out'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('Confirm Logout'), findsOneWidget);
-    });
+        expect(find.text('Confirm Logout'), findsOneWidget);
+      },
+    );
 
     testWidgets('AuthGate routes to BiblioneShell when authenticated', (
       WidgetTester tester,
@@ -329,14 +404,13 @@ void main() {
       await controller.initialize();
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: AuthGate(authController: controller),
-        ),
+        MaterialApp(home: AuthGate(authController: controller)),
       );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.byType(BiblioneShell), findsOneWidget);
     });
+
   });
 }

@@ -7,6 +7,7 @@ import com.biblione.user.dto.AuthResponse;
 import com.biblione.user.dto.LoginRequest;
 import com.biblione.user.dto.RegisterRequest;
 import com.biblione.user.dto.UserResponse;
+import com.biblione.user.dto.VendorRegistrationRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -29,6 +30,12 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponse register(@Valid @RequestBody RegisterRequest request) {
         return authService.register(request);
+    }
+
+    @PostMapping("/register/vendor")
+    @ResponseStatus(HttpStatus.CREATED)
+    public UserResponse registerVendor(@Valid @RequestBody VendorRegistrationRequest request) {
+        return authService.registerVendor(request);
     }
 
     @PostMapping("/login")

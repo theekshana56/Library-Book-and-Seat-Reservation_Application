@@ -52,7 +52,7 @@ class _StaffTaskAssignmentScreenState extends State<StaffTaskAssignmentScreen> {
       final values = await Future.wait([
         _api.getUsers(role: 'LIBRARY_STAFF', active: true),
         _api.getPendingShelvingBooks(),
-        _api.getShelves(),
+        _api.getActiveShelves(),
       ]);
       if (!mounted) return;
       _staff = values[0] as List<AdminUser>;
@@ -208,7 +208,7 @@ class _StaffTaskAssignmentScreenState extends State<StaffTaskAssignmentScreen> {
               AdminSectionTitle(
                 'Selected staff tasks',
                 trailing:
-                    '${_tasks.where((task) => task.status != 'COMPLETED').length} OPEN',
+                    '${_tasks.where((task) => task.status != 'COMPLETED' && task.status != 'CANCELLED').length} OPEN',
               ),
               const SizedBox(height: 10),
               if (_staff.isEmpty)
@@ -234,7 +234,7 @@ class _StaffTaskAssignmentScreenState extends State<StaffTaskAssignmentScreen> {
           (user) => DropdownMenuItem(
             value: user.id,
             child: Text(
-              '${user.fullName} Â· ${user.department}',
+              '${user.fullName} | ${user.department}',
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -263,7 +263,7 @@ class _StaffTaskAssignmentScreenState extends State<StaffTaskAssignmentScreen> {
         (book) => DropdownMenuItem<String?>(
           value: book.id,
           child: Text(
-            '${book.title} Â· ${book.totalCopies} copies',
+            '${book.title} | ${book.totalCopies} copies',
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -290,7 +290,7 @@ class _StaffTaskAssignmentScreenState extends State<StaffTaskAssignmentScreen> {
           (shelf) => DropdownMenuItem(
             value: shelf.shelfCode,
             child: Text(
-              '${shelf.shelfCode} Â· ${shelf.level}',
+              '${shelf.shelfCode} | ${shelf.level}',
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -327,7 +327,7 @@ class _StaffTaskAssignmentScreenState extends State<StaffTaskAssignmentScreen> {
                   ),
                 ),
                 Text(
-                  '${task.assignedStaffName} Â· ${task.quantity} copies Â· ${task.targetShelfCode}',
+                  '${task.assignedStaffName} | ${task.quantity} copies | ${task.targetShelfCode}',
                   style: GoogleFonts.plusJakartaSans(
                     color: const Color(0xFF5B6B7C),
                     fontSize: 10,
@@ -337,10 +337,107 @@ class _StaffTaskAssignmentScreenState extends State<StaffTaskAssignmentScreen> {
             ),
           ),
           AdminStatusPill(task.status),
+          if (task.status != 'COMPLETED' && task.status != 'CANCELLED')
+            PopupMenuButton<String>(
+              tooltip: 'Task actions',
+              onSelected: (action) {
+                if (action == 'edit') _editTask(task);
+                if (action == 'cancel') _cancelTask(task);
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(value: 'edit', child: Text('Edit task')),
+                PopupMenuItem(value: 'cancel', child: Text('Cancel task')),
+              ],
+            ),
         ],
       ),
     ),
   );
+
+  Future<void> _editTask(StaffTask task) async {
+    final instructions = TextEditingController(text: task.taskDescription);
+    final shelf = TextEditingController(text: task.targetShelfCode);
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit staff task'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: instructions,
+              decoration: const InputDecoration(labelText: 'Instructions'),
+              minLines: 2,
+              maxLines: 4,
+            ),
+            TextField(
+              controller: shelf,
+              decoration: const InputDecoration(labelText: 'Target shelf'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (result == true) {
+      try {
+        await _api.editTask(task.id, {
+          'assignedStaffId': task.assignedStaffId,
+          'taskDescription': instructions.text.trim(),
+          'targetShelfCode': shelf.text.trim(),
+        });
+        await _refreshStaffTasks();
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(error.toString())));
+        }
+      }
+    }
+    instructions.dispose();
+    shelf.dispose();
+  }
+
+  Future<void> _cancelTask(StaffTask task) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cancel task?'),
+        content: const Text(
+          'The task will remain in the record as cancelled and will no longer appear as open.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep task'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Cancel task'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await _api.cancelTask(task.id);
+      await _refreshStaffTasks();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    }
+  }
 
   InputDecoration _decoration(String label) => InputDecoration(
     labelText: label,

@@ -58,6 +58,30 @@ class AuthApiClient {
     return UserProfile.fromJson(data);
   }
 
+  Future<UserProfile> registerVendor({
+    required String fullName,
+    required String companyName,
+    required String email,
+    required String password,
+    required String confirmPassword,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/api/v1/auth/register/vendor');
+    final response = await _client.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'fullName': fullName.trim(),
+        'companyName': companyName.trim(),
+        'email': email.trim(),
+        'password': password,
+        'confirmPassword': confirmPassword,
+      }),
+    );
+    _ensureSuccess(response);
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return UserProfile.fromJson(data);
+  }
+
   Future<UserProfile> getProfile(String token) async {
     final uri = Uri.parse('$_baseUrl/api/v1/users/me');
     final response = await _client.get(

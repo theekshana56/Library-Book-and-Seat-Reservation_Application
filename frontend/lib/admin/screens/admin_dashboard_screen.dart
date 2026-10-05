@@ -5,7 +5,7 @@ import '../controllers/admin_api_client.dart';
 import '../models/admin_models.dart';
 import '../widgets/admin_widgets.dart';
 import 'admin_proposal_review_screen.dart';
-import 'publisher_proposal_form_screen.dart';
+import 'book_catalog_management_screen.dart';
 import 'shelf_management_screen.dart';
 import 'space_management_screen.dart';
 import 'staff_task_assignment_screen.dart';
@@ -176,7 +176,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Operational overview Â· ${stats.activeUsers} active accounts',
+                'Operational overview | ${stats.activeUsers} active accounts',
                 style: GoogleFonts.plusJakartaSans(
                   color: const Color(0xFFB8C7D5),
                   fontSize: 11,
@@ -222,16 +222,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         const ShelfManagementScreen(),
       ),
       _WorkspaceItem(
+        'Book catalog',
+        'Create, update and archive titles',
+        Icons.menu_book_outlined,
+        const BookCatalogManagementScreen(),
+      ),
+      _WorkspaceItem(
         'Seats & halls',
         'Register library spaces',
         Icons.event_seat_outlined,
         const SpaceManagementScreen(),
-      ),
-      _WorkspaceItem(
-        'Vendor portal',
-        'Submit offers and read responses',
-        Icons.storefront_outlined,
-        const PublisherProposalFormScreen(),
       ),
       _WorkspaceItem(
         'Staff task board',

@@ -86,6 +86,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         'password': _password.text,
         'role': _role,
         'department': _department.text.trim(),
+        if (_role == 'VENDOR') 'vendorCompanyName': _department.text.trim(),
         'userCategory': _role,
         'active': _active,
       });
@@ -117,6 +118,116 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             .showSnackBar(SnackBar(content: Text(error.toString())));
       }
     }
+  }
+
+  Future<void> _editUser(AdminUser user) async {
+    final name = TextEditingController(text: user.fullName);
+    final email = TextEditingController(text: user.email);
+    final organization = TextEditingController(
+      text: user.vendorCompanyName.isNotEmpty
+          ? user.vendorCompanyName
+          : user.department,
+    );
+    final formKey = GlobalKey<FormState>();
+    var role = user.role;
+    var active = user.active;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Edit account'),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: name,
+                    decoration: const InputDecoration(labelText: 'Full name'),
+                    validator: _required,
+                  ),
+                  TextFormField(
+                    controller: email,
+                    decoration: const InputDecoration(labelText: 'Email'),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) => value != null && value.contains('@')
+                        ? null
+                        : 'Enter a valid email.',
+                  ),
+                  TextFormField(
+                    controller: organization,
+                    decoration: const InputDecoration(
+                      labelText: 'Department / organization',
+                    ),
+                  ),
+                  DropdownButtonFormField<String>(
+                    initialValue: _roles.contains(role) ? role : _roles.first,
+                    decoration: const InputDecoration(labelText: 'Role'),
+                    items: _roles
+                        .map(
+                          (value) => DropdownMenuItem(
+                            value: value,
+                            child: Text(value.replaceAll('_', ' ')),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) setDialogState(() => role = value);
+                    },
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Account active'),
+                    value: active,
+                    onChanged: (value) =>
+                        setDialogState(() => active = value),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(dialogContext, true);
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result == true) {
+      try {
+        await _api.updateUser(user.id, {
+          'fullName': name.text.trim(),
+          'email': email.text.trim(),
+          'role': role,
+          'department': organization.text.trim(),
+          'vendorCompanyName': role == 'VENDOR'
+              ? organization.text.trim()
+              : null,
+          'userCategory': role,
+          'active': active,
+        });
+        await _load();
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(error.toString())));
+        }
+      }
+    }
+    name.dispose();
+    email.dispose();
+    organization.dispose();
   }
 
   @override
@@ -277,7 +388,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   ),
                 ),
                 Text(
-                  '${user.role.replaceAll('_', ' ')} Â· ${user.department}',
+                  '${user.role.replaceAll('_', ' ')} · '
+                  '${user.vendorCompanyName.isNotEmpty ? user.vendorCompanyName : user.department}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.plusJakartaSans(
@@ -294,10 +406,24 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     fontSize: 10,
                   ),
                 ),
+                if (user.role == 'VENDOR' && !user.active)
+                  Text(
+                    'INACTIVE / REVIEW',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: const Color(0xFFB45309),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
               ],
             ),
           ),
           const SizedBox(width: 4),
+          IconButton(
+            tooltip: 'Edit account',
+            onPressed: () => _editUser(user),
+            icon: const Icon(Icons.edit_outlined, size: 19),
+          ),
           Switch.adaptive(
             value: user.active,
             activeTrackColor: AppColors.emerald,

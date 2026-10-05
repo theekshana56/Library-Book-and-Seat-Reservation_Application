@@ -11,6 +11,7 @@ import com.biblione.user.dto.AuthResponse;
 import com.biblione.user.dto.LoginRequest;
 import com.biblione.user.dto.RegisterRequest;
 import com.biblione.user.dto.UserResponse;
+import com.biblione.user.dto.VendorRegistrationRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -105,6 +106,28 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.register(request))
                 .isInstanceOf(ApiException.class)
                 .hasMessageContaining("email already exists");
+    }
+
+    @Test
+    void registerVendor_createsInactiveEmailAccountForAdminApproval() {
+        VendorRegistrationRequest request = new VendorRegistrationRequest(
+                "Morgan Lee", "North Books Ltd.", "morgan@northbooks.example",
+                "secret123", "secret123");
+        when(userRepository.existsByEmailIgnoreCase("morgan@northbooks.example")).thenReturn(false);
+        when(passwordEncoder.encode("secret123")).thenReturn("hashed-secret");
+        when(userRepository.save(any(AdminUser.class))).thenAnswer(invocation -> {
+            AdminUser user = invocation.getArgument(0);
+            user.setId("vendor-1");
+            return user;
+        });
+
+        UserResponse response = authService.registerVendor(request);
+
+        assertThat(response.id()).isEqualTo("vendor-1");
+        assertThat(response.role()).isEqualTo(UserRole.VENDOR);
+        assertThat(response.active()).isFalse();
+        assertThat(response.universityId()).isNull();
+        assertThat(response.vendorCompanyName()).isEqualTo("North Books Ltd.");
     }
 
     @Test
@@ -220,7 +243,7 @@ class AuthServiceTest {
     void logout_revokesSession() {
         AuthenticatedUser currentUser = new AuthenticatedUser(
                 "user-1", "IT20240001", "Jane Doe", "jane@biblione.edu",
-                UserRole.STUDENT, "CS", "UNDERGRADUATE", true, "hash-123"
+                UserRole.STUDENT, "CS", "UNDERGRADUATE", null, true, "hash-123"
         );
 
         AuthSession session = AuthSession.builder()
