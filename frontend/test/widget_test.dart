@@ -16,6 +16,8 @@ import 'package:biblione/models/book.dart';
 import 'package:biblione/user_management/widgets/auth_gate.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:biblione/screens/search_catalog_screen.dart';
+import 'package:biblione/seat_booking/models/seat_booking_models.dart';
+import 'package:biblione/seat_booking/screens/checkin_success_screen.dart';
 import 'package:biblione/user_management/controllers/auth_controller.dart';
 import 'package:biblione/user_management/services/auth_api_client.dart';
 import 'package:biblione/user_management/services/auth_storage.dart';
@@ -35,6 +37,71 @@ void main() {
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
   });
+
+  testWidgets('check-in Done returns to the active booking screen', (
+    WidgetTester tester,
+  ) async {
+    const booking = SeatBookingRecord(
+      id: 'booking-1',
+      userId: 'user-1',
+      seatCode: 'A12',
+      bookingDate: '2026-10-10',
+      startTime: '09:00:00',
+      endTime: '11:30:00',
+      status: 'CHECKED_IN',
+      checkInTime: '2026-10-10T09:02:00',
+    );
+    const seat = SeatMapSeat(
+      id: 'seat-1',
+      seatCode: 'A12',
+      hallCode: 'NORTH',
+      floor: 'Level 2',
+      zone: 'Quiet Zone',
+      hasPowerOutlet: true,
+      acousticsDb: 24,
+      features: [],
+      available: false,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Column(
+              children: [
+                const Text('Active booking screen'),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).push<void>(
+                    MaterialPageRoute(
+                      builder: (_) => const CheckinSuccessScreen(
+                        booking: booking,
+                        seat: seat,
+                      ),
+                    ),
+                  ),
+                  child: const Text('Show success'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Show success'));
+    await tester.pumpAndSettle();
+    expect(find.text('10 October 2026'), findsOneWidget);
+    expect(find.text('Level 2 Quiet Zone'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Done'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Active booking screen'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('search catalog does not update state after disposal', (
     WidgetTester tester,
   ) async {
