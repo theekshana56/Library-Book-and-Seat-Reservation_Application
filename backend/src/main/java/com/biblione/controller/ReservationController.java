@@ -1,17 +1,21 @@
 package com.biblione.controller;
 
 import com.biblione.dto.CreateReservationRequest;
+import com.biblione.dto.UpdateReservationRequest;
 import com.biblione.dto.UserBookingsResponse;
 import com.biblione.model.Book;
 import com.biblione.model.Loan;
 import com.biblione.model.Reservation;
+import com.biblione.model.WaitlistEntry;
 import com.biblione.service.BookReservationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -45,9 +49,28 @@ public class ReservationController {
         return bookReservationService.reserveBook(request);
     }
 
+    @PostMapping("/waitlist")
+    @ResponseStatus(HttpStatus.CREATED)
+    public WaitlistEntry joinWaitlist(@Valid @RequestBody CreateReservationRequest request) {
+        return bookReservationService.joinWaitlist(request);
+    }
+
     @PostMapping("/reservations/{id}/cancel")
     public Reservation cancelReservation(@PathVariable String id) {
         return bookReservationService.cancelReservation(id);
+    }
+
+    @PutMapping("/reservations/{id}")
+    public Reservation updateReservation(
+            @PathVariable String id,
+            @Valid @RequestBody UpdateReservationRequest request) {
+        return bookReservationService.updateReservation(id, request);
+    }
+
+    @DeleteMapping("/reservations/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteReservation(@PathVariable String id) {
+        bookReservationService.cancelReservation(id);
     }
 
     @GetMapping("/users/{userId}/bookings")
