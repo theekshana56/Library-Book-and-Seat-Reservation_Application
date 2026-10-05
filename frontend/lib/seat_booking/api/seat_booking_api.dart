@@ -5,6 +5,7 @@ import 'package:http/http.dart'
     as http;
 
 import '../models/seat_booking_models.dart';
+import '../../user_management/services/auth_storage.dart';
 
 class SeatBookingApiException
     implements Exception {
@@ -21,10 +22,6 @@ class SeatBookingApiException
 }
 
 class SeatBookingApi {
-
-  static const String demoUserId =
-      'IT23763630';
-
   static String get baseUrl {
 
     const env =
@@ -119,10 +116,24 @@ class SeatBookingApi {
 
     required String endTime,
 
-    String userId =
-        demoUserId,
+    String? userId,
 
   }) async {
+    final requestedUserId = userId?.trim();
+    final profile = requestedUserId == null || requestedUserId.isEmpty
+        ? await AuthStorage().getUser()
+        : null;
+    final resolvedUserId =
+        requestedUserId?.isNotEmpty == true
+            ? requestedUserId
+            : profile?.universityId?.trim().isNotEmpty == true
+                ? profile!.universityId!.trim()
+                : profile?.id.trim();
+    if (resolvedUserId == null || resolvedUserId.isEmpty) {
+      throw const SeatBookingApiException(
+        'Sign in to reserve a study seat.',
+      );
+    }
 
     final response =
         await http.post(
@@ -137,7 +148,7 @@ class SeatBookingApi {
       },
 
       body: jsonEncode({
-        'userId': userId,
+        'userId': resolvedUserId,
 
         'seatCode':
             seatCode,

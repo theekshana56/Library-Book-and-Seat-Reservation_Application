@@ -22,7 +22,7 @@
       message: json['message'] as String,
       type: json['type'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
-      isRead: json['isRead'] as bool? ?? false,
+      isRead: (json['isRead'] ?? json['read']) as bool? ?? false,
     );
   }
 

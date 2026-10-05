@@ -16,12 +16,15 @@ class ReviewBookingScreen
 
   final String endTime;
 
+  final String? userId;
+
   const ReviewBookingScreen({
     super.key,
     required this.seat,
     required this.bookingDate,
     required this.startTime,
     required this.endTime,
+    this.userId,
   });
 
   @override
@@ -163,6 +166,9 @@ class _ReviewBookingScreenState
         endTime:
             widget
                 .endTime,
+
+        userId:
+            widget.userId,
       );
 
       if (!mounted) {

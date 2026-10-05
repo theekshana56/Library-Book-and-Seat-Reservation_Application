@@ -1,5 +1,6 @@
 package com.biblione.notification.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,8 +29,19 @@ public class Notification {
     private String type; // SYSTEM, REMINDER
     
     @Builder.Default
+    @JsonProperty("isRead")
     private boolean isRead = false;
     
     @Builder.Default
     private Instant createdAt = Instant.now();
+
+    @JsonProperty("isRead")
+    public boolean isRead() {
+        return isRead;
+    }
+
+    @JsonProperty("isRead")
+    public void setRead(boolean isRead) {
+        this.isRead = isRead;
+    }
 }
