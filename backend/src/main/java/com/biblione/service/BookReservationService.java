@@ -47,6 +47,7 @@ public class BookReservationService {
         String q = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
         String cat = category == null || "All Topics".equalsIgnoreCase(category.trim()) ? "" : category.trim();
         var results = bookRepository.findAll().stream()
+                .filter(book -> !Boolean.FALSE.equals(book.getActive()))
                 .filter(book -> cat.isEmpty() || book.getCategory() != null
                         && book.getCategory().equalsIgnoreCase(cat))
                 .filter(book -> q.isEmpty() || matchesQuery(book, q))
@@ -90,6 +91,7 @@ public class BookReservationService {
 
     public Book getBook(String id) {
         return bookRepository.findById(id)
+                .filter(book -> !Boolean.FALSE.equals(book.getActive()))
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Book not found"));
     }
 

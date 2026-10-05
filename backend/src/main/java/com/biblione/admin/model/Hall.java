@@ -34,4 +34,6 @@ public class Hall {
     private int floorCount;
 
     private String description;
+
+    private Boolean active;
 }
