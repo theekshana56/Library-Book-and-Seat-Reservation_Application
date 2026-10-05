@@ -114,7 +114,7 @@ class _StaffTaskDashboardScreenState extends State<StaffTaskDashboardScreen> {
               AdminSectionTitle(
                 'Active assignments',
                 trailing:
-                    '${_tasks.where((task) => task.status != 'COMPLETED').length} OPEN',
+                    '${_tasks.where((task) => task.status != 'COMPLETED' && task.status != 'CANCELLED').length} OPEN',
               ),
               const SizedBox(height: 10),
               if (_staff.isEmpty)
@@ -195,7 +195,9 @@ class _StaffTaskDashboardScreenState extends State<StaffTaskDashboardScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          if (task.bookId.isNotEmpty && task.status != 'COMPLETED')
+          if (task.bookId.isNotEmpty &&
+              task.status != 'COMPLETED' &&
+              task.status != 'CANCELLED')
             _shelfPicker(task),
           const SizedBox(height: 9),
           Row(
