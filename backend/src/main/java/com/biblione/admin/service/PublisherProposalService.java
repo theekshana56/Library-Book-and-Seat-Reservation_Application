@@ -26,8 +26,8 @@ public class PublisherProposalService {
     private final AdminUserRepository userRepository;
     private final BookRepository bookRepository;
 
-    public PublisherProposal submit(CreateProposalRequest request) {
-        AdminUser vendor = userRepository.findById(request.vendorId())
+    public PublisherProposal submit(String vendorId, CreateProposalRequest request) {
+        AdminUser vendor = userRepository.findById(vendorId)
                 .filter(user -> user.isActive() && user.getRole() == UserRole.VENDOR)
                 .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "The selected account is not an active vendor."));
         return proposalRepository.save(PublisherProposal.builder()
@@ -46,7 +46,39 @@ public class PublisherProposalService {
                 .build());
     }
 
-    public List<PublisherProposal> getVendorProposals(String vendorId) {
+    public PublisherProposal update(String id, String vendorId, CreateProposalRequest request) {
+        PublisherProposal proposal = proposalRepository.findById(id)
+                .filter(item -> item.getVendorId().equals(vendorId))
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Proposal not found."));
+        if (proposal.getStatus() != ProposalStatus.PENDING_ADMIN_REVIEW) {
+            throw new ApiException(HttpStatus.CONFLICT, "Only pending proposals can be edited.");
+        }
+        proposal.setBookTitle(request.bookTitle().trim());
+        proposal.setAuthor(request.author().trim());
+        proposal.setIsbn(request.isbn());
+        proposal.setCategory(request.category().trim());
+        proposal.setDescription(request.description());
+        proposal.setProposedPrice(request.proposedPrice());
+        proposal.setVendorSupplyQty(request.vendorSupplyQty());
+        proposal.setSampleCoverImageUrl(request.sampleCoverImageUrl());
+        return proposalRepository.save(proposal);
+    }
+
+    public PublisherProposal withdraw(String id, String vendorId) {
+        PublisherProposal proposal = proposalRepository.findById(id)
+                .filter(item -> item.getVendorId().equals(vendorId))
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Proposal not found."));
+        if (proposal.getStatus() != ProposalStatus.PENDING_ADMIN_REVIEW) {
+            throw new ApiException(HttpStatus.CONFLICT, "Only pending proposals can be withdrawn.");
+        }
+        proposal.setStatus(ProposalStatus.WITHDRAWN);
+        return proposalRepository.save(proposal);
+    }
+
+    public List<PublisherProposal> getVendorProposals(String vendorId, String authenticatedVendorId) {
+        if (!vendorId.equals(authenticatedVendorId)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "You can only view your own proposals.");
+        }
         return proposalRepository.findByVendorIdOrderByCreatedAtDesc(vendorId);
     }
 

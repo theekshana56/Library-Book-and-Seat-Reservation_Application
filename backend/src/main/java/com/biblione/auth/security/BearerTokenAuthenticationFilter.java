@@ -1,6 +1,7 @@
 package com.biblione.auth.security;
 
 import com.biblione.admin.model.AdminUser;
+import com.biblione.admin.model.UserRole;
 import com.biblione.admin.repository.AdminUserRepository;
 import com.biblione.auth.model.AuthSession;
 import com.biblione.auth.repository.AuthSessionRepository;
@@ -54,6 +55,10 @@ public class BearerTokenAuthenticationFilter extends OncePerRequestFilter {
                 sendUnauthorizedResponse(response, "Full authentication is required to access this resource.");
                 return;
             }
+            if (!isAuthorized(request)) {
+                sendForbiddenResponse(response, "You do not have permission to access this resource.");
+                return;
+            }
 
             filterChain.doFilter(request, response);
         } finally {
@@ -95,6 +100,11 @@ public class BearerTokenAuthenticationFilter extends OncePerRequestFilter {
 
     private boolean isProtectedPath(HttpServletRequest request) {
         String path = request.getRequestURI();
+        if (path.startsWith("/api/v1/admin/")
+                || path.startsWith("/api/v1/publisher/")
+                || path.startsWith("/api/v1/staff/")) {
+            return true;
+        }
         if (path.startsWith("/api/v1/users/me")) {
             return true;
         }
@@ -105,6 +115,41 @@ public class BearerTokenAuthenticationFilter extends OncePerRequestFilter {
             return true;
         }
         return false;
+    }
+
+    private boolean isAuthorized(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        AuthenticatedUser user = AuthContext.getCurrentUser();
+        if (path.startsWith("/api/v1/admin/")) {
+            if (user == null) {
+                return false;
+            }
+            if (user.role() == UserRole.ADMIN) {
+                return true;
+            }
+            return user.role() == UserRole.LIBRARY_STAFF
+                    && (path.matches("/api/v1/admin/tasks/staff/[^/]+")
+                    || path.matches("/api/v1/admin/tasks/[^/]+/status"));
+        }
+        if (path.startsWith("/api/v1/publisher/")) {
+            return user != null && user.role() == UserRole.VENDOR;
+        }
+        if (path.startsWith("/api/v1/staff/")) {
+            return user != null && user.role() == UserRole.LIBRARY_STAFF;
+        }
+        return true;
+    }
+
+    private void sendForbiddenResponse(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpStatus.FORBIDDEN.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        Map<String, Object> errorBody = Map.of(
+                "timestamp", Instant.now().toString(),
+                "status", HttpStatus.FORBIDDEN.value(),
+                "error", HttpStatus.FORBIDDEN.getReasonPhrase(),
+                "message", message
+        );
+        response.getWriter().write(objectMapper.writeValueAsString(errorBody));
     }
 
     private void sendUnauthorizedResponse(HttpServletResponse response, String message) throws IOException {

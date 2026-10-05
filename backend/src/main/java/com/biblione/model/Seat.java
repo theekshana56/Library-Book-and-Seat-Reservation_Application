@@ -45,4 +45,5 @@ public class Seat {
     private String bookingLockToken;
     @JsonIgnore
     private Instant bookingLockExpiresAt;
+    private Boolean active;
 }

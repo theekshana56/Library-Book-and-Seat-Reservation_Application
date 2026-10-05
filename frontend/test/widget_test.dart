@@ -8,6 +8,7 @@ import 'package:http/testing.dart';
 import 'package:biblione/admin/controllers/admin_api_client.dart';
 import 'package:biblione/admin/screens/admin_proposal_review_screen.dart';
 import 'package:biblione/admin/screens/publisher_proposal_form_screen.dart';
+import 'package:biblione/admin/screens/staff_portal_screen.dart';
 import 'package:biblione/api/api_client.dart';
 import 'package:biblione/debug_agent_log.dart';
 import 'package:biblione/main.dart';
@@ -15,6 +16,11 @@ import 'package:biblione/models/book.dart';
 import 'package:biblione/user_management/widgets/auth_gate.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:biblione/screens/search_catalog_screen.dart';
+import 'package:biblione/seat_booking/models/seat_booking_models.dart';
+import 'package:biblione/seat_booking/screens/checkin_success_screen.dart';
+import 'package:biblione/user_management/controllers/auth_controller.dart';
+import 'package:biblione/user_management/services/auth_api_client.dart';
+import 'package:biblione/user_management/services/auth_storage.dart';
 
 class FakeApiClient extends ApiClient {
   @override
@@ -31,6 +37,71 @@ void main() {
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
   });
+
+  testWidgets('check-in Done returns to the active booking screen', (
+    WidgetTester tester,
+  ) async {
+    const booking = SeatBookingRecord(
+      id: 'booking-1',
+      userId: 'user-1',
+      seatCode: 'A12',
+      bookingDate: '2026-10-10',
+      startTime: '09:00:00',
+      endTime: '11:30:00',
+      status: 'CHECKED_IN',
+      checkInTime: '2026-10-10T09:02:00',
+    );
+    const seat = SeatMapSeat(
+      id: 'seat-1',
+      seatCode: 'A12',
+      hallCode: 'NORTH',
+      floor: 'Level 2',
+      zone: 'Quiet Zone',
+      hasPowerOutlet: true,
+      acousticsDb: 24,
+      features: [],
+      available: false,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Column(
+              children: [
+                const Text('Active booking screen'),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).push<void>(
+                    MaterialPageRoute(
+                      builder: (_) => const CheckinSuccessScreen(
+                        booking: booking,
+                        seat: seat,
+                      ),
+                    ),
+                  ),
+                  child: const Text('Show success'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Show success'));
+    await tester.pumpAndSettle();
+    expect(find.text('10 October 2026'), findsOneWidget);
+    expect(find.text('Level 2 Quiet Zone'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Done'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Active booking screen'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('search catalog does not update state after disposal', (
     WidgetTester tester,
   ) async {
@@ -48,6 +119,95 @@ void main() {
     await tester.pump(const Duration(milliseconds: 250));
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('staff portal has separate task and to-do screens', (
+    WidgetTester tester,
+  ) async {
+    final authHttp = MockClient(
+      (_) async => http.Response(
+        jsonEncode({
+          'token': 'staff-token',
+          'tokenType': 'Bearer',
+          'user': {
+            'id': 'staff-1',
+            'fullName': 'Library Staff',
+            'email': 'staff@biblione.edu',
+            'role': 'LIBRARY_STAFF',
+            'active': true,
+          },
+        }),
+        200,
+      ),
+    );
+    final authController = AuthController(
+      apiClient: AuthApiClient(
+        baseUrl: 'https://example.test',
+        client: authHttp,
+      ),
+      storage: AuthStorage(),
+    );
+    await authController.login(
+      identifier: 'staff@biblione.edu',
+      password: 'password123',
+    );
+
+    final staffHttp = MockClient((request) async {
+      if (request.url.path == '/api/v1/staff/tasks') {
+        return http.Response(
+          jsonEncode([
+            {
+              'id': 'task-1',
+              'assignedStaffId': 'staff-1',
+              'assignedStaffName': 'Library Staff',
+              'bookTitle': 'Clean Architecture',
+              'bookId': 'book-1',
+              'taskDescription': 'Shelve the new copies',
+              'targetShelfCode': 'CS-204',
+              'quantity': 2,
+              'status': 'PENDING',
+            },
+          ]),
+          200,
+        );
+      }
+      if (request.url.path == '/api/v1/staff/shelves') {
+        return http.Response(
+          jsonEncode([
+            {
+              'id': 'shelf-1',
+              'shelfCode': 'CS-204',
+              'level': 'Level 2',
+              'zone': 'East Wing',
+              'maxCapacity': 50,
+              'currentBookCount': 10,
+            },
+          ]),
+          200,
+        );
+      }
+      return http.Response('Not found', 404);
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StaffPortalScreen(
+          authController: authController,
+          apiClient: AdminApiClient(client: staffHttp),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('My tasks'), findsWidgets);
+    expect(find.text('Clean Architecture'), findsOneWidget);
+    await tester.tap(find.text('To-dos'));
+    await tester.pumpAndSettle();
+    expect(find.text('YOUR OPEN CHECKLIST'), findsOneWidget);
+    expect(find.textContaining('1 items remain'), findsOneWidget);
+
+    authHttp.close();
+    staffHttp.close();
   });
 
   testWidgets('app builds and exposes the auth gate', (
@@ -90,6 +250,7 @@ void main() {
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => PublisherProposalFormScreen(
+                      vendorId: 'vendor-test',
                       apiClient: AdminApiClient(client: client),
                     ),
                   ),
@@ -105,16 +266,16 @@ void main() {
     await tester.pumpAndSettle();
 
     final fields = find.byType(TextFormField);
+    await tester.ensureVisible(fields.at(0));
+    await tester.enterText(fields.at(0), 'Test title');
     await tester.ensureVisible(fields.at(1));
-    await tester.enterText(fields.at(1), 'Test title');
-    await tester.ensureVisible(fields.at(2));
-    await tester.enterText(fields.at(2), 'Test author');
-    await tester.ensureVisible(fields.at(4));
-    await tester.enterText(fields.at(4), 'Computer Science');
+    await tester.enterText(fields.at(1), 'Test author');
+    await tester.ensureVisible(fields.at(3));
+    await tester.enterText(fields.at(3), 'Computer Science');
+    await tester.ensureVisible(fields.at(5));
+    await tester.enterText(fields.at(5), '12.50');
     await tester.ensureVisible(fields.at(6));
-    await tester.enterText(fields.at(6), '12.50');
-    await tester.ensureVisible(fields.at(7));
-    await tester.enterText(fields.at(7), '5');
+    await tester.enterText(fields.at(6), '5');
     tester.binding.focusManager.primaryFocus?.unfocus();
     await tester.pumpAndSettle();
     final submitButton = find.widgetWithText(FilledButton, 'Submit Proposal');
@@ -166,6 +327,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: PublisherProposalFormScreen(
+          vendorId: 'vendor-test',
           apiClient: AdminApiClient(client: apiClient),
           googleBooksClient: googleBooksClient,
         ),
@@ -173,7 +335,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final isbnField = find.byType(TextFormField).at(3);
+    final isbnField = find.byType(TextFormField).at(2);
     await tester.ensureVisible(isbnField);
     await tester.enterText(isbnField, '978-0-13-595705-9');
     final lookupButton = find.widgetWithText(
@@ -188,11 +350,11 @@ void main() {
     expect(lookupRequest?.url.host, 'www.googleapis.com');
     expect(lookupRequest?.url.path, '/books/v1/volumes');
     expect(lookupRequest?.url.queryParameters['q'], 'isbn:9780135957059');
-    expect(fields.elementAt(1).controller?.text, 'The Pragmatic Programmer');
-    expect(fields.elementAt(2).controller?.text, 'David Thomas');
-    expect(fields.elementAt(4).controller?.text, 'Computers');
+    expect(fields.elementAt(0).controller?.text, 'The Pragmatic Programmer');
+    expect(fields.elementAt(1).controller?.text, 'David Thomas');
+    expect(fields.elementAt(3).controller?.text, 'Computers');
     expect(
-      fields.elementAt(8).controller?.text,
+      fields.elementAt(7).controller?.text,
       'https://example.com/cover.jpg',
     );
     expect(find.text('Book details filled from Google Books.'), findsOneWidget);
@@ -219,6 +381,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: PublisherProposalFormScreen(
+          vendorId: 'vendor-test',
           apiClient: AdminApiClient(client: apiClient),
           googleBooksClient: googleBooksClient,
         ),
@@ -226,7 +389,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final isbnField = find.byType(TextFormField).at(3);
+    final isbnField = find.byType(TextFormField).at(2);
     await tester.ensureVisible(isbnField);
     await tester.enterText(isbnField, '9780135957059');
     final lookupButton = find.widgetWithText(

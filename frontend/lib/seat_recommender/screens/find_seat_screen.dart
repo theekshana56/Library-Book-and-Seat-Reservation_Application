@@ -262,8 +262,8 @@ class _FindSeatScreenState extends State<FindSeatScreen> {
                   const SizedBox(height: 10),
                   Text(
                     DateUtils.isSameDay(_date, DateTime.now())
-                        ? 'Todayâ€™s starts require at least 2 hoursâ€™ notice.'
-                        : 'Start times use the libraryâ€™s local time.',
+                        ? "Today's starts require at least 2 hours' notice."
+                        : "Start times use the library's local time.",
                     style: _mutedStyle(10),
                   ),
                   const SizedBox(height: 9),

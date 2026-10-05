@@ -130,10 +130,12 @@ class BookReservationServiceTest {
     }
 
     @Test
-    void searchBooksIncludesTitlesAwaitingShelving() {
+    void searchBooksIncludesTitlesAwaitingShelvingAndHidesArchivedTitles() {
         Book ready = Book.builder().id("book-ready").title("Ready Book").inventoryStatus("AVAILABLE").build();
         Book pending = Book.builder().id("book-pending").title("Pending Book").inventoryStatus("PENDING_SHELVING").build();
-        when(bookRepository.findAll()).thenReturn(java.util.List.of(ready, pending));
+        Book archived = Book.builder().id("book-archived").title("Archived Book")
+                .inventoryStatus("AVAILABLE").active(false).build();
+        when(bookRepository.findAll()).thenReturn(java.util.List.of(ready, pending, archived));
 
         var results = service.searchBooks("", "");
 

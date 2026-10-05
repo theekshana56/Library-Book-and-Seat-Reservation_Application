@@ -12,12 +12,12 @@ import '../widgets/admin_widgets.dart';
 const _googleBooksApiKey = String.fromEnvironment('GOOGLE_BOOKS_API_KEY');
 
 class PublisherProposalFormScreen extends StatefulWidget {
-  final String initialVendorId;
+  final String vendorId;
   final AdminApiClient? apiClient;
   final http.Client? googleBooksClient;
   const PublisherProposalFormScreen({
     super.key,
-    this.initialVendorId = 'seed-vendor',
+    required this.vendorId,
     this.apiClient,
     this.googleBooksClient,
   });
@@ -33,7 +33,6 @@ class _PublisherProposalFormScreenState
   late final http.Client _googleBooksClient;
   late final bool _ownsGoogleBooksClient;
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _vendorId;
   late final TextEditingController _title;
   late final TextEditingController _author;
   late final TextEditingController _isbn;
@@ -46,6 +45,7 @@ class _PublisherProposalFormScreenState
   bool _loading = true;
   bool _saving = false;
   bool _lookingUpIsbn = false;
+  String? _editingProposalId;
   String? _error;
 
   @override
@@ -54,7 +54,6 @@ class _PublisherProposalFormScreenState
     _api = widget.apiClient ?? AdminApiClient();
     _ownsGoogleBooksClient = widget.googleBooksClient == null;
     _googleBooksClient = widget.googleBooksClient ?? http.Client();
-    _vendorId = TextEditingController(text: widget.initialVendorId);
     _title = TextEditingController();
     _author = TextEditingController();
     _isbn = TextEditingController();
@@ -63,7 +62,7 @@ class _PublisherProposalFormScreenState
     _price = TextEditingController();
     _quantity = TextEditingController();
     _coverUrl = TextEditingController();
-    _load(vendorId: widget.initialVendorId);
+    _load(vendorId: widget.vendorId);
   }
 
   @override
@@ -76,7 +75,6 @@ class _PublisherProposalFormScreenState
       data: {'mounted': mounted, 'saving': _saving, 'lookingUp': _lookingUpIsbn},
     );
     // #endregion
-    _vendorId.dispose();
     _title.dispose();
     _author.dispose();
     _isbn.dispose();
@@ -91,7 +89,7 @@ class _PublisherProposalFormScreenState
 
   Future<void> _load({String? vendorId}) async {
     if (!mounted) return;
-    final requestedVendorId = vendorId ?? _vendorId.text.trim();
+    final requestedVendorId = vendorId ?? widget.vendorId;
     setState(() {
       _loading = true;
       _error = null;
@@ -116,7 +114,6 @@ class _PublisherProposalFormScreenState
     if (!mounted || _saving || _lookingUpIsbn) return;
     if (!_formKey.currentState!.validate()) return;
     final payload = <String, dynamic>{
-      'vendorId': _vendorId.text.trim(),
       'bookTitle': _title.text.trim(),
       'author': _author.text.trim(),
       'isbn': _isbn.text.trim(),
@@ -140,8 +137,14 @@ class _PublisherProposalFormScreenState
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _saving = true);
     try {
-      await _api.submitProposal(payload);
+      final editing = _editingProposalId;
+      if (editing == null) {
+        await _api.submitProposal(payload);
+      } else {
+        await _api.updateProposal(editing, payload);
+      }
       if (!mounted) return;
+      _editingProposalId = null;
       _title.clear();
       _author.clear();
       _isbn.clear();
@@ -151,9 +154,15 @@ class _PublisherProposalFormScreenState
       _quantity.clear();
       _coverUrl.clear();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Offer submitted for admin review.')),
+        SnackBar(
+          content: Text(
+            editing == null
+                ? 'Offer submitted for admin review.'
+                : 'Proposal updated.',
+          ),
+        ),
       );
-      await _load(vendorId: payload['vendorId'] as String);
+      await _load(vendorId: widget.vendorId);
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -161,6 +170,66 @@ class _PublisherProposalFormScreenState
       }
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  void _editProposal(PublisherProposal proposal) {
+    setState(() {
+      _editingProposalId = proposal.id;
+      _title.text = proposal.bookTitle;
+      _author.text = proposal.author;
+      _isbn.text = proposal.isbn;
+      _category.text = proposal.category;
+      _description.text = proposal.description;
+      _price.text = proposal.proposedPrice.toString();
+      _quantity.text = '${proposal.vendorSupplyQty}';
+      _coverUrl.text = proposal.sampleCoverImageUrl;
+    });
+  }
+
+  void _clearProposalEdit() {
+    setState(() {
+      _editingProposalId = null;
+      _title.clear();
+      _author.clear();
+      _isbn.clear();
+      _category.clear();
+      _description.clear();
+      _price.clear();
+      _quantity.clear();
+      _coverUrl.clear();
+    });
+  }
+
+  Future<void> _withdrawProposal(PublisherProposal proposal) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Withdraw proposal?'),
+        content: const Text(
+          'This pending proposal will be retained in your history and no longer reviewed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep proposal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Withdraw'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await _api.withdrawProposal(proposal.id);
+      await _load(vendorId: widget.vendorId);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
+      }
     }
   }
 
@@ -316,14 +385,12 @@ class _PublisherProposalFormScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const AdminSectionTitle('Book details'),
-                  const SizedBox(height: 13),
-                  AdminField(
-                    label: 'Vendor account ID',
-                    controller: _vendorId,
-                    validator: _required,
+                  AdminSectionTitle(
+                    _editingProposalId == null
+                        ? 'Book details'
+                        : 'Edit pending proposal',
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 13),
                   AdminField(
                     label: 'Book title',
                     controller: _title,
@@ -440,9 +507,20 @@ class _PublisherProposalFormScreenState
                               ),
                             )
                           : const Icon(Icons.send_rounded, size: 17),
-                      label: const Text('Submit Proposal'),
+                      label: Text(
+                        _editingProposalId == null
+                            ? 'Submit Proposal'
+                            : 'Save Proposal',
+                      ),
                     ),
                   ),
+                  if (_editingProposalId != null) ...[
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: _clearProposalEdit,
+                      child: const Text('Stop editing'),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -492,7 +570,7 @@ class _PublisherProposalFormScreenState
           ),
           const SizedBox(height: 5),
           Text(
-            '${proposal.author} Â· ${proposal.category} Â· ${proposal.vendorSupplyQty} copies',
+            '${proposal.author} | ${proposal.category} | ${proposal.vendorSupplyQty} copies',
             style: GoogleFonts.plusJakartaSans(
               color: const Color(0xFF5B6B7C),
               fontSize: 11,
@@ -514,6 +592,24 @@ class _PublisherProposalFormScreenState
                   color: const Color(0xFF34495E),
                 ),
               ),
+            ),
+          ],
+          if (proposal.status == 'PENDING_ADMIN_REVIEW') ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => _editProposal(proposal),
+                  icon: const Icon(Icons.edit_outlined, size: 17),
+                  label: const Text('Edit'),
+                ),
+                TextButton.icon(
+                  onPressed: () => _withdrawProposal(proposal),
+                  icon: const Icon(Icons.undo_rounded, size: 17),
+                  label: const Text('Withdraw'),
+                ),
+              ],
             ),
           ],
         ],

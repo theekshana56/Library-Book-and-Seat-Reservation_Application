@@ -46,6 +46,7 @@ public class SeatBookingService {
 
         return seatRepository.findAll()
                 .stream()
+                .filter(candidate -> !Boolean.FALSE.equals(candidate.getActive()))
                 .sorted(
                         Comparator.comparing(
                                 Seat::getSeatCode
@@ -115,6 +116,7 @@ public class SeatBookingService {
                 .findBySeatCodeIgnoreCase(
                         request.getSeatCode()
                 )
+                .filter(candidate -> !Boolean.FALSE.equals(candidate.getActive()))
                 .orElseThrow(
                         () -> new ApiException(
                                 HttpStatus.NOT_FOUND,

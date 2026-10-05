@@ -237,7 +237,7 @@ class _AdminProposalReviewScreenState extends State<AdminProposalReviewScreen> {
             if (!pending && proposal.adminMessage.isNotEmpty) ...[
               const SizedBox(height: 10),
               Text(
-                'RESPONSE  Â·  ${proposal.adminMessage}',
+                'RESPONSE - ${proposal.adminMessage}',
                 style: GoogleFonts.plusJakartaSans(
                   color: AppColors.emerald,
                   fontSize: 11,

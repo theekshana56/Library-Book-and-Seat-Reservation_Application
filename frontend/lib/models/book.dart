@@ -25,6 +25,7 @@
   final String? description;
   final String? catalogNotice;
   final int? expressHoldHours;
+  final bool active;
 
   const Book({
     required this.id,
@@ -53,6 +54,7 @@
     this.description,
     this.catalogNotice,
     this.expressHoldHours,
+    this.active = true,
   });
 
   bool get isAvailable =>
@@ -119,6 +121,7 @@
       description: json['description']?.toString(),
       catalogNotice: json['catalogNotice'],
       expressHoldHours: json['expressHoldHours'],
+      active: json['active'] != false,
     );
   }
 }

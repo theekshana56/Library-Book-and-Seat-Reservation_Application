@@ -124,6 +124,7 @@ class _ActiveBookingScreenState
           seatNumber:
               booking
                   .seatCode,
+          seat: widget.seat,
         ),
       ),
     );

@@ -112,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Log in to reserve books and quiet study seats',
+                  'Sign in to continue to your Biblione workspace',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13,
@@ -155,13 +155,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 18),
                 ],
 
-                // University ID field with right subtitle
+                // Students can use their university ID; vendors use their email.
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Flexible(
                       child: Text(
-                        'University ID',
+                        'Email or University ID',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -171,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Student / Faculty',
+                      'All account types',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
@@ -189,13 +189,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: const Color(0xFF1E293B),
                   ),
                   decoration: InputDecoration(
-                    hintText: 'e.g. IT23773158',
+                    hintText: 'Email address or university ID',
                     hintStyle: GoogleFonts.plusJakartaSans(
                       color: const Color(0xFF94A3B8),
                       fontSize: 13.5,
                     ),
                     prefixIcon: const Icon(
-                      Icons.badge_outlined,
+                      Icons.person_outline_rounded,
                       color: Color(0xFF64748B),
                       size: 20,
                     ),
@@ -223,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) {
-                      return 'Please enter your University ID or Email';
+                      return 'Please enter your email or University ID';
                     }
                     return null;
                   },

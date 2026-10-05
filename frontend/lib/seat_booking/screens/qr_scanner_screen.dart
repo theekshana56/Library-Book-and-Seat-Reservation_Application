@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../api/seat_booking_api.dart';
+import '../models/seat_booking_models.dart';
 import 'checkin_success_screen.dart';
 import 'qr_error_screen.dart';
 
@@ -12,10 +13,13 @@ class QRScannerScreen
 
   final String seatNumber;
 
+  final SeatMapSeat seat;
+
   const QRScannerScreen({
     super.key,
     required this.bookingId,
     required this.seatNumber,
+    required this.seat,
   });
 
   @override
@@ -110,9 +114,8 @@ class _QRScannerScreenState
       return;
     }
 
-    setState(() {
-      _processing = true;
-    });
+    if (!mounted) return;
+    setState(() => _processing = true);
 
     final scannedSeat =
         _seatCodeFromQr(
@@ -120,89 +123,58 @@ class _QRScannerScreenState
     );
 
     try {
-
       await _controller
           .stop();
-
-      await _api
-          .checkIn(
-
-        bookingId:
-            widget
-                .bookingId,
-
-        seatCode:
-            scannedSeat,
-      );
-
+    } catch (error) {
       if (!mounted) {
         return;
       }
+      await _showError(raw.trim(), error.toString());
+      return;
+    }
 
-      await Navigator
-          .of(context)
-          .push(
+    SeatBookingRecord checkedIn;
+    try {
+      checkedIn = await _api.checkIn(
+        bookingId: widget.bookingId,
+        seatCode: scannedSeat,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      await _showError(raw.trim(), error.toString());
+      return;
+    }
 
-        MaterialPageRoute(
-          builder:
-              (_) =>
-                  CheckinSuccessScreen(
-
-            seatNumber:
-                widget
-                    .seatNumber,
-          ),
+    if (!mounted) return;
+    await Navigator.of(context).pushReplacement<void, void>(
+      MaterialPageRoute(
+        builder: (_) => CheckinSuccessScreen(
+          booking: checkedIn,
+          seat: widget.seat,
         ),
-      );
+      ),
+    );
+  }
 
-      if (!mounted) {
-        return;
-      }
-
-      Navigator
-          .of(context)
-          .pop();
-
-    } catch (_) {
-
-      if (!mounted) {
-        return;
-      }
-
-      await Navigator
-          .of(context)
-          .push(
-
-        MaterialPageRoute(
-          builder:
-              (_) =>
-                  QRErrorScreen(
-
-            seatNumber:
-                widget
-                    .seatNumber,
-
-            scannedValue:
-                raw.trim(),
-          ),
+  Future<void> _showError(String scannedValue, String message) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => QRErrorScreen(
+          seatNumber: widget.seatNumber,
+          scannedValue: scannedValue,
+          errorMessage: message,
         ),
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _processing = false);
+    try {
+      await _controller.start();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to restart the camera: $error')),
       );
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _processing =
-            false;
-      });
-
-      try {
-
-        await _controller
-            .start();
-
-      } catch (_) {}
     }
   }
 
