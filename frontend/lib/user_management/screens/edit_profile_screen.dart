@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../theme/app_colors.dart';
 import '../../widgets/ui_kit.dart';
 import '../controllers/auth_controller.dart';
@@ -7,10 +8,12 @@ import '../widgets/auth_form_scaffold.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final AuthController authController;
+  final bool isVendor;
 
   const EditProfileScreen({
     super.key,
     required this.authController,
+    this.isVendor = false,
   });
 
   @override
@@ -74,9 +77,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       builder: (context, _) {
         return AuthFormScaffold(
           title: 'Edit Profile',
-          subtitle: 'Update your personal library details',
+          subtitle: widget.isVendor
+              ? 'Update your vendor contact details'
+              : 'Update your personal library details',
           headerLeading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
             onPressed: () => Navigator.of(context).pop(),
           ),
           body: Form(
@@ -147,8 +156,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   textCapitalization: TextCapitalization.words,
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.person_outline, size: 20),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 14,
+                    ),
                   ),
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) {
@@ -172,8 +186,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.mail_outline, size: 20),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 14,
+                    ),
                   ),
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) {
@@ -186,28 +205,37 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Department',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                if (!widget.isVendor) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'Department',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _departmentController,
-                  decoration: InputDecoration(
-                    hintText: 'e.g. Faculty of Computing',
-                    prefixIcon: const Icon(Icons.business_outlined, size: 20),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    controller: _departmentController,
+                    decoration: InputDecoration(
+                      hintText: 'e.g. Faculty of Computing',
+                      prefixIcon: const Icon(Icons.business_outlined, size: 20),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 14,
+                      ),
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: 28),
                 PrimaryButton(
-                  label: controller.isLoading ? 'Saving Changes...' : 'Save Changes',
+                  label: controller.isLoading
+                      ? 'Saving Changes...'
+                      : 'Save Changes',
                   icon: controller.isLoading ? null : Icons.save_outlined,
                   onPressed: controller.isLoading ? null : _submit,
                 ),

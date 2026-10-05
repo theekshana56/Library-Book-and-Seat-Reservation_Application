@@ -1,16 +1,14 @@
 ﻿import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../controllers/auth_controller.dart';
 import '../widgets/biblione_auth_scaffold.dart';
 
 class RegistrationScreen extends StatefulWidget {
   final AuthController authController;
 
-  const RegistrationScreen({
-    super.key,
-    required this.authController,
-  });
+  const RegistrationScreen({super.key, required this.authController});
 
   @override
   State<RegistrationScreen> createState() => _RegistrationScreenState();
@@ -19,6 +17,7 @@ class RegistrationScreen extends StatefulWidget {
 class _RegistrationScreenState extends State<RegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
+  final _companyNameController = TextEditingController();
   final _universityIdController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -27,10 +26,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _agreeToTerms = true;
+  bool _isVendor = false;
 
   @override
   void dispose() {
     _fullNameController.dispose();
+    _companyNameController.dispose();
     _universityIdController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -62,11 +63,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'By creating a Biblione account, you agree to:\n\n'
-                '1. Check into your reserved study desk within 15 minutes using the desk QR code or NFC tag.\n'
-                '2. Maintain a quiet environment in designated Quiet Study Zones.\n'
-                '3. Return borrowed library volumes within the 14-day borrowing window.\n'
-                '4. Use your student credentials exclusively for authorized academic purposes.',
+                _isVendor
+                    ? 'By applying for a vendor account, you agree to provide accurate business details, offer genuine book inventory, and respond to library purchase decisions through this portal.'
+                    : 'By creating a Biblione account, you agree to:\n\n'
+                          '1. Check into your reserved study desk within 15 minutes using the desk QR code or NFC tag.\n'
+                          '2. Maintain a quiet environment in designated Quiet Study Zones.\n'
+                          '3. Return borrowed library volumes within the 14-day borrowing window.\n'
+                          '4. Use your student credentials exclusively for authorized academic purposes.',
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 13,
                   color: const Color(0xFF334155),
@@ -110,18 +113,30 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       return;
     }
 
-    final success = await widget.authController.register(
-      fullName: _fullNameController.text.trim(),
-      universityId: _universityIdController.text.trim(),
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-      confirmPassword: _confirmPasswordController.text,
-    );
+    final success = _isVendor
+        ? await widget.authController.registerVendor(
+            fullName: _fullNameController.text.trim(),
+            companyName: _companyNameController.text.trim(),
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            confirmPassword: _confirmPasswordController.text,
+          )
+        : await widget.authController.register(
+            fullName: _fullNameController.text.trim(),
+            universityId: _universityIdController.text.trim(),
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            confirmPassword: _confirmPasswordController.text,
+          );
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account created successfully! Please sign in.'),
+        SnackBar(
+          content: Text(
+            _isVendor
+                ? 'Vendor application submitted. Library admin approval is required before sign-in.'
+                : 'Account created successfully! Please sign in.',
+          ),
           backgroundColor: Color(0xFF00875A),
         ),
       );
@@ -137,7 +152,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       listenable: controller,
       builder: (context, _) {
         return BiblioneAuthScaffold(
-          subtitle: 'University Library',
+          subtitle: _isVendor ? 'Vendor application' : 'University Library',
           subtitleColor: const Color(0xFF00875A),
           onBack: () => Navigator.of(context).pop(),
           bottomPrompt: Wrap(
@@ -167,8 +182,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               ),
             ],
           ),
-          securityTitle:
-              'SLIIT University Library System â€” Encrypted & Authorized Academic Access',
+          securityTitle: 'SLIIT University Library System â€” Encrypted & Authorized Academic Access',
           securitySubtitle: null,
           body: Form(
             key: _formKey,
@@ -177,7 +191,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               children: [
                 // Title & Subtitle matching Figma
                 Text(
-                  'Create Account',
+                  _isVendor ? 'Vendor Registration' : 'Create Account',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 22,
@@ -187,7 +201,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Join to start reserving books and seats',
+                  _isVendor
+                      ? 'Apply for a vendor account to offer books to the library'
+                      : 'Join to start reserving books and seats',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13,
@@ -195,6 +211,28 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
+                SegmentedButton<bool>(
+                  segments: const [
+                    ButtonSegment<bool>(
+                      value: false,
+                      label: Text('Student'),
+                      icon: Icon(Icons.school_outlined),
+                    ),
+                    ButtonSegment<bool>(
+                      value: true,
+                      label: Text('Vendor'),
+                      icon: Icon(Icons.storefront_outlined),
+                    ),
+                  ],
+                  selected: {_isVendor},
+                  onSelectionChanged: (selection) {
+                    setState(() {
+                      _isVendor = selection.first;
+                    });
+                    controller.clearError();
+                  },
+                ),
+                const SizedBox(height: 18),
 
                 // Error Banner
                 if (controller.errorMessage != null) ...[
@@ -260,34 +298,63 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 ),
                 const SizedBox(height: 14),
 
-                // 2. University ID
-                Text(
-                  'University ID',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E293B),
+                if (_isVendor) ...[
+                  Text(
+                    'Company / Publisher Name',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1E293B),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _universityIdController,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14,
-                    color: const Color(0xFF1E293B),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    controller: _companyNameController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: _buildInputDecoration(
+                      hintText: 'e.g. North Books Ltd.',
+                      prefixIcon: Icons.storefront_outlined,
+                    ),
+                    validator: (value) {
+                      if (_isVendor &&
+                          (value == null || value.trim().isEmpty)) {
+                        return 'Company or publisher name is required';
+                      }
+                      return null;
+                    },
                   ),
-                  decoration: _buildInputDecoration(
-                    hintText: 'e.g. IT23773158',
-                    prefixIcon: Icons.badge_outlined,
+                  const SizedBox(height: 14),
+                ],
+                if (!_isVendor) ...[
+                  // 2. University ID
+                  Text(
+                    'University ID',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1E293B),
+                    ),
                   ),
-                  validator: (val) {
-                    if (val == null || val.trim().isEmpty) {
-                      return 'University ID is required';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 14),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    controller: _universityIdController,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      color: const Color(0xFF1E293B),
+                    ),
+                    decoration: _buildInputDecoration(
+                      hintText: 'e.g. IT23773158',
+                      prefixIcon: Icons.badge_outlined,
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'University ID is required';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                ],
 
                 // 3. Email Address
                 Text(
@@ -462,9 +529,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               recognizer: TapGestureRecognizer()
                                 ..onTap = _showTermsDialog,
                             ),
-                            const TextSpan(
-                              text:
-                                  ' and Library Seat Reservation Code of Conduct.',
+                            TextSpan(
+                              text: _isVendor
+                                  ? ' and Vendor Application Terms.'
+                                  : ' and Library Seat Reservation Code of Conduct.',
                             ),
                           ],
                         ),
@@ -498,7 +566,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Create Account',
+                                _isVendor
+                                    ? 'Submit application'
+                                    : 'Create Account',
                                 style: GoogleFonts.plusJakartaSans(
                                   color: Colors.white,
                                   fontSize: 15,
@@ -534,11 +604,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         color: const Color(0xFF94A3B8),
         fontSize: 13.5,
       ),
-      prefixIcon: Icon(
-        prefixIcon,
-        color: const Color(0xFF64748B),
-        size: 20,
-      ),
+      prefixIcon: Icon(prefixIcon, color: const Color(0xFF64748B), size: 20),
       suffixIcon: suffixIcon,
       filled: true,
       fillColor: const Color(0xFFF1F5F9),

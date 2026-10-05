@@ -6,6 +6,7 @@
   final String role;
   final String? department;
   final String? userCategory;
+  final String? vendorCompanyName;
   final bool active;
 
   const UserProfile({
@@ -16,6 +17,7 @@
     required this.role,
     this.department,
     this.userCategory,
+    this.vendorCompanyName,
     this.active = true,
   });
 
@@ -28,6 +30,7 @@
       role: json['role'] as String? ?? 'STUDENT',
       department: json['department'] as String?,
       userCategory: json['userCategory'] as String?,
+      vendorCompanyName: json['vendorCompanyName'] as String?,
       active: json['active'] as bool? ?? true,
     );
   }
@@ -41,6 +44,7 @@
       'role': role,
       if (department != null) 'department': department,
       if (userCategory != null) 'userCategory': userCategory,
+      if (vendorCompanyName != null) 'vendorCompanyName': vendorCompanyName,
       'active': active,
     };
   }
@@ -53,6 +57,7 @@
     String? role,
     String? department,
     String? userCategory,
+    String? vendorCompanyName,
     bool? active,
   }) {
     return UserProfile(
@@ -63,6 +68,7 @@
       role: role ?? this.role,
       department: department ?? this.department,
       userCategory: userCategory ?? this.userCategory,
+      vendorCompanyName: vendorCompanyName ?? this.vendorCompanyName,
       active: active ?? this.active,
     );
   }

@@ -178,6 +178,41 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  Future<bool> registerVendor({
+    required String fullName,
+    required String companyName,
+    required String email,
+    required String password,
+    required String confirmPassword,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _apiClient.registerVendor(
+        fullName: fullName,
+        companyName: companyName,
+        email: email,
+        password: password,
+        confirmPassword: confirmPassword,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _errorMessage = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (_) {
+      _errorMessage = 'An unexpected error occurred during vendor registration.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> updateProfile({
     required String fullName,
     required String email,

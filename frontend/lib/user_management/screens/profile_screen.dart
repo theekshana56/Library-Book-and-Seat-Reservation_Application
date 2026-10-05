@@ -17,11 +17,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   bool _canAccessAdmin(String role) {
-    final r = role.toUpperCase();
-    return r == 'ADMIN' ||
-        r == 'LIBRARY_STAFF' ||
-        r == 'UNIVERSITY_MANAGEMENT' ||
-        r == 'IT_SUPPORT_STAFF';
+    return role.toUpperCase() == 'ADMIN';
   }
 
   void _showHistoryReceipts(BuildContext context) {
