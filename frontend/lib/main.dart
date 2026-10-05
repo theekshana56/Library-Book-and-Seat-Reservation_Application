@@ -74,6 +74,12 @@ class _BiblioneShellState extends State<BiblioneShell> {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = widget.authController?.currentUser;
+    final universityId = currentUser?.universityId;
+    final bookingsUserId =
+        universityId != null && universityId.trim().isNotEmpty
+        ? universityId.trim()
+        : currentUser?.id;
     final pages = [
       HomeScreen(
         onFindSeat: () => setState(() => _index = 1),
@@ -82,7 +88,7 @@ class _BiblioneShellState extends State<BiblioneShell> {
       ),
       FindSeatScreen(onBack: () => setState(() => _index = 0)),
       const SearchCatalogScreen(),
-      const MyBookingsScreen(),
+      MyBookingsScreen(userId: bookingsUserId),
       if (widget.authController != null)
         ProfileScreen(authController: widget.authController!)
       else

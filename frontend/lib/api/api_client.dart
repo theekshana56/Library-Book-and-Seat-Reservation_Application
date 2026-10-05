@@ -100,16 +100,12 @@ class ApiClient {
 
   Future<Reservation> updateReservation(
     String id, {
-    required String pickupDesk,
-    required String pickupDeskDetail,
+    required String bookId,
   }) async {
     final res = await http.put(
       Uri.parse('$baseUrl/api/v1/reservations/$id'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'pickupDesk': pickupDesk,
-        'pickupDeskDetail': pickupDeskDetail,
-      }),
+      body: jsonEncode({'bookId': bookId}),
     );
     _ensureOk(res);
     return Reservation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);

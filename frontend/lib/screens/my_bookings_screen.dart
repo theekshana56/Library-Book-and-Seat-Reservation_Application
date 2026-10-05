@@ -4,13 +4,16 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../api/api_client.dart';
+import '../models/book.dart';
 import '../models/models.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ui_kit.dart';
 
 class MyBookingsScreen extends StatefulWidget {
-  const MyBookingsScreen({super.key});
+  final String? userId;
+
+  const MyBookingsScreen({super.key, this.userId});
 
   @override
   State<MyBookingsScreen> createState() => _MyBookingsScreenState();
@@ -35,7 +38,18 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       _error = null;
     });
     try {
-      final data = await _api.getBookings();
+      var data = await _api.getBookings(widget.userId);
+      final userId = widget.userId;
+      if (_hasNoBookings(data) &&
+          userId != null &&
+          userId.toLowerCase().endsWith('v')) {
+        final fallbackData = await _api.getBookings(
+          userId.substring(0, userId.length - 1),
+        );
+        if (!_hasNoBookings(fallbackData)) {
+          data = fallbackData;
+        }
+      }
       setState(() {
         _data = data;
         _loading = false;
@@ -47,6 +61,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       });
     }
   }
+
+  bool _hasNoBookings(UserBookings data) =>
+      data.reservations.isEmpty && data.seatHolds.isEmpty && data.loans.isEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +163,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          ApiClient.demoUserId,
+                          data?.userId ??
+                              widget.userId ??
+                              ApiClient.demoUserId,
                           style: GoogleFonts.plusJakartaSans(
                             fontWeight: FontWeight.w800,
                             fontSize: 11,
@@ -449,9 +468,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
             children: [
               Expanded(
                 child: SoftButton(
-                  label: 'Edit Pickup',
-                  icon: Icons.edit_outlined,
-                  onPressed: canManage ? () => _editReservation(r) : null,
+                  label: 'Change Book',
+                  icon: Icons.menu_book_outlined,
+                  onPressed: canManage ? () => _changeReservationBook(r) : null,
                 ),
               ),
               const SizedBox(width: 8),
@@ -477,85 +496,141 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         : policyDeadline;
   }
 
-  Future<void> _editReservation(Reservation reservation) async {
-    final deskController = TextEditingController(text: reservation.pickupDesk);
-    final detailController = TextEditingController(
-      text: reservation.pickupDeskDetail,
-    );
-    final formKey = GlobalKey<FormState>();
+  Future<void> _changeReservationBook(Reservation reservation) async {
     try {
-      final pickupDetails = await showDialog<(String, String)>(
+      final booksFuture = _api.searchBooks();
+      final selectedBook = await showDialog<Book>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Edit pickup details'),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: deskController,
-                  decoration: const InputDecoration(labelText: 'Pickup desk'),
-                  textCapitalization: TextCapitalization.words,
-                  validator: _requiredPickupValue,
+        builder: (dialogContext) {
+          var query = '';
+          return StatefulBuilder(
+            builder: (context, setDialogState) => AlertDialog(
+              title: const Text('Choose another book'),
+              content: SizedBox(
+                width: 420,
+                height: 420,
+                child: Column(
+                  children: [
+                    TextField(
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.search),
+                        hintText: 'Search available books',
+                      ),
+                      onChanged: (value) =>
+                          setDialogState(() => query = value.trim()),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: FutureBuilder<List<Book>>(
+                        future: booksFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: Text(snapshot.error.toString()),
+                            );
+                          }
+                          final availableBooks = (snapshot.data ?? [])
+                              .where(
+                                (book) =>
+                                    book.id != reservation.bookId &&
+                                    book.isAvailable &&
+                                    (query.isEmpty ||
+                                        book.title.toLowerCase().contains(
+                                          query.toLowerCase(),
+                                        ) ||
+                                        book.author.toLowerCase().contains(
+                                          query.toLowerCase(),
+                                        )),
+                              )
+                              .toList();
+                          if (availableBooks.isEmpty) {
+                            return const Center(
+                              child: Text('No other available books found.'),
+                            );
+                          }
+                          return ListView.builder(
+                            itemCount: availableBooks.length,
+                            itemBuilder: (context, index) {
+                              final book = availableBooks[index];
+                              return ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: BookCover(
+                                  url: book.coverImageUrl,
+                                  width: 38,
+                                  height: 52,
+                                ),
+                                title: Text(
+                                  book.title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: Text(
+                                  '${book.author} · ${book.copiesLabel}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                onTap: () =>
+                                    Navigator.pop(dialogContext, book),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                TextFormField(
-                  controller: detailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Pickup location details',
-                  ),
-                  textCapitalization: TextCapitalization.sentences,
-                  validator: _requiredPickupValue,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Keep current book'),
                 ),
               ],
             ),
+          );
+        },
+      );
+      if (selectedBook == null || !mounted) return;
+
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Change reserved book?'),
+          content: Text(
+            'Replace "${reservation.title}" with "${selectedBook.title}"?',
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
+              onPressed: () => Navigator.pop(dialogContext, false),
               child: const Text('Keep current'),
             ),
             FilledButton(
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  Navigator.pop(dialogContext, (
-                    deskController.text.trim(),
-                    detailController.text.trim(),
-                  ));
-                }
-              },
-              child: const Text('Save changes'),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Change book'),
             ),
           ],
         ),
       );
-      if (pickupDetails == null || !mounted) return;
+      if (confirmed != true || !mounted) return;
 
-      await _api.updateReservation(
-        reservation.id,
-        pickupDesk: pickupDetails.$1,
-        pickupDeskDetail: pickupDetails.$2,
-      );
+      await _api.updateReservation(reservation.id, bookId: selectedBook.id);
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Pickup details updated.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Book changed to "${selectedBook.title}".')),
+      );
       await _load();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
-    } finally {
-      deskController.dispose();
-      detailController.dispose();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
     }
-  }
-
-  String? _requiredPickupValue(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'This field is required.';
-    }
-    return null;
   }
 
   Future<void> _deleteReservation(Reservation reservation) async {
