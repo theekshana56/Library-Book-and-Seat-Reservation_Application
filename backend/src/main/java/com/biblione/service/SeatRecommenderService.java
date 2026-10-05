@@ -39,6 +39,7 @@ public class SeatRecommenderService {
                 .collect(Collectors.toSet());
 
         List<ScoredSeat> available = seatRepository.findAll().stream()
+                .filter(seat -> !Boolean.FALSE.equals(seat.getActive()))
                 .filter(seat -> seat.getSeatCode() != null && !seat.getSeatCode().isBlank())
                 .filter(seat -> !heldSeatCodes.contains(seat.getSeatCode().toUpperCase(Locale.ROOT)))
                 .map(seat -> new ScoredSeat(seat, score(seat, request), isExactMatch(seat, request)))
