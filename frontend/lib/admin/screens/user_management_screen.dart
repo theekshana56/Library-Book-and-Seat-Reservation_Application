@@ -277,7 +277,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   ),
                 ),
                 Text(
-                  '${user.role.replaceAll('_', ' ')} Â· ${user.department}',
+                  '${user.role.replaceAll('_', ' ')} · '
+                  '${user.vendorCompanyName.isNotEmpty ? user.vendorCompanyName : user.department}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.plusJakartaSans(
@@ -294,6 +295,15 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     fontSize: 10,
                   ),
                 ),
+                if (user.role == 'VENDOR' && !user.active)
+                  Text(
+                    'INACTIVE / REVIEW',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: const Color(0xFFB45309),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
               ],
             ),
           ),
