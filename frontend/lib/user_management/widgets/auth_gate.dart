@@ -7,6 +7,7 @@ import '../../widgets/ui_kit.dart';
 import '../controllers/auth_controller.dart';
 import '../screens/login_screen.dart';
 import '../screens/onboarding_screen.dart';
+import '../../admin/screens/vendor_portal_screen.dart';
 
 class AuthGate extends StatefulWidget {
   final AuthController? authController;
@@ -52,6 +53,9 @@ class _AuthGateState extends State<AuthGate> {
         }
 
         if (_authController.isAuthenticated) {
+          if (_authController.currentUser?.role.toUpperCase() == 'VENDOR') {
+            return VendorPortalScreen(authController: _authController);
+          }
           return BiblioneShell(authController: _authController);
         }
 

@@ -90,6 +90,7 @@ void main() {
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => PublisherProposalFormScreen(
+                      vendorId: 'vendor-test',
                       apiClient: AdminApiClient(client: client),
                     ),
                   ),
@@ -105,16 +106,16 @@ void main() {
     await tester.pumpAndSettle();
 
     final fields = find.byType(TextFormField);
+    await tester.ensureVisible(fields.at(0));
+    await tester.enterText(fields.at(0), 'Test title');
     await tester.ensureVisible(fields.at(1));
-    await tester.enterText(fields.at(1), 'Test title');
-    await tester.ensureVisible(fields.at(2));
-    await tester.enterText(fields.at(2), 'Test author');
-    await tester.ensureVisible(fields.at(4));
-    await tester.enterText(fields.at(4), 'Computer Science');
+    await tester.enterText(fields.at(1), 'Test author');
+    await tester.ensureVisible(fields.at(3));
+    await tester.enterText(fields.at(3), 'Computer Science');
+    await tester.ensureVisible(fields.at(5));
+    await tester.enterText(fields.at(5), '12.50');
     await tester.ensureVisible(fields.at(6));
-    await tester.enterText(fields.at(6), '12.50');
-    await tester.ensureVisible(fields.at(7));
-    await tester.enterText(fields.at(7), '5');
+    await tester.enterText(fields.at(6), '5');
     tester.binding.focusManager.primaryFocus?.unfocus();
     await tester.pumpAndSettle();
     final submitButton = find.widgetWithText(FilledButton, 'Submit Proposal');
@@ -166,6 +167,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: PublisherProposalFormScreen(
+          vendorId: 'vendor-test',
           apiClient: AdminApiClient(client: apiClient),
           googleBooksClient: googleBooksClient,
         ),
@@ -173,7 +175,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final isbnField = find.byType(TextFormField).at(3);
+    final isbnField = find.byType(TextFormField).at(2);
     await tester.ensureVisible(isbnField);
     await tester.enterText(isbnField, '978-0-13-595705-9');
     final lookupButton = find.widgetWithText(
@@ -188,11 +190,11 @@ void main() {
     expect(lookupRequest?.url.host, 'www.googleapis.com');
     expect(lookupRequest?.url.path, '/books/v1/volumes');
     expect(lookupRequest?.url.queryParameters['q'], 'isbn:9780135957059');
-    expect(fields.elementAt(1).controller?.text, 'The Pragmatic Programmer');
-    expect(fields.elementAt(2).controller?.text, 'David Thomas');
-    expect(fields.elementAt(4).controller?.text, 'Computers');
+    expect(fields.elementAt(0).controller?.text, 'The Pragmatic Programmer');
+    expect(fields.elementAt(1).controller?.text, 'David Thomas');
+    expect(fields.elementAt(3).controller?.text, 'Computers');
     expect(
-      fields.elementAt(8).controller?.text,
+      fields.elementAt(7).controller?.text,
       'https://example.com/cover.jpg',
     );
     expect(find.text('Book details filled from Google Books.'), findsOneWidget);
@@ -219,6 +221,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: PublisherProposalFormScreen(
+          vendorId: 'vendor-test',
           apiClient: AdminApiClient(client: apiClient),
           googleBooksClient: googleBooksClient,
         ),
@@ -226,7 +229,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final isbnField = find.byType(TextFormField).at(3);
+    final isbnField = find.byType(TextFormField).at(2);
     await tester.ensureVisible(isbnField);
     await tester.enterText(isbnField, '9780135957059');
     final lookupButton = find.widgetWithText(
