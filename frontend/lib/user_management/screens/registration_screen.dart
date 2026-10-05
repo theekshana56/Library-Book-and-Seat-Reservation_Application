@@ -182,7 +182,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               ),
             ],
           ),
-          securityTitle: 'SLIIT University Library System â€” Encrypted & Authorized Academic Access',
+          securityTitle: 'SLIIT University Library System - Encrypted & Authorized Academic Access',
           securitySubtitle: null,
           body: Form(
             key: _formKey,

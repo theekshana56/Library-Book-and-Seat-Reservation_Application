@@ -7,7 +7,7 @@ import '../../user_management/services/auth_storage.dart';
 import '../models/notification_model.dart';
 
 class NotificationApiClient {
-  NotificationApiClient({String? token}) : _token = token;
+  NotificationApiClient({this._token});
 
   final String? _token;
   final AuthStorage _authStorage = AuthStorage();

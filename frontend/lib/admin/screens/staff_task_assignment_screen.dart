@@ -234,7 +234,7 @@ class _StaffTaskAssignmentScreenState extends State<StaffTaskAssignmentScreen> {
           (user) => DropdownMenuItem(
             value: user.id,
             child: Text(
-              '${user.fullName} Â· ${user.department}',
+              '${user.fullName} | ${user.department}',
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -263,7 +263,7 @@ class _StaffTaskAssignmentScreenState extends State<StaffTaskAssignmentScreen> {
         (book) => DropdownMenuItem<String?>(
           value: book.id,
           child: Text(
-            '${book.title} Â· ${book.totalCopies} copies',
+            '${book.title} | ${book.totalCopies} copies',
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -290,7 +290,7 @@ class _StaffTaskAssignmentScreenState extends State<StaffTaskAssignmentScreen> {
           (shelf) => DropdownMenuItem(
             value: shelf.shelfCode,
             child: Text(
-              '${shelf.shelfCode} Â· ${shelf.level}',
+              '${shelf.shelfCode} | ${shelf.level}',
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -327,7 +327,7 @@ class _StaffTaskAssignmentScreenState extends State<StaffTaskAssignmentScreen> {
                   ),
                 ),
                 Text(
-                  '${task.assignedStaffName} Â· ${task.quantity} copies Â· ${task.targetShelfCode}',
+                  '${task.assignedStaffName} | ${task.quantity} copies | ${task.targetShelfCode}',
                   style: GoogleFonts.plusJakartaSans(
                     color: const Color(0xFF5B6B7C),
                     fontSize: 10,

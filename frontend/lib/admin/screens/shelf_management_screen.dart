@@ -189,7 +189,7 @@ class _ShelfManagementScreenState extends State<ShelfManagementScreen> {
                       AdminField(
                         label: 'Category zone',
                         controller: _zone,
-                        hint: 'Quiet Zone Â· East Wing',
+                        hint: 'Quiet Zone - East Wing',
                         validator: _required,
                       ),
                       const SizedBox(height: 10),
@@ -298,7 +298,7 @@ class _ShelfManagementScreenState extends State<ShelfManagementScreen> {
                         ),
                       ),
                       Text(
-                        '${shelf.level} Â· ${shelf.zone}',
+                        '${shelf.level} | ${shelf.zone}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.plusJakartaSans(
