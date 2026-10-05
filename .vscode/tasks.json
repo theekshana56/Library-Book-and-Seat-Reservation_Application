@@ -1,23 +1,25 @@
-{
+﻿{
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Flutter: Run on 25028RN03A",
-      "type": "process",
-      "command": "powershell.exe",
-      "args": [
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        "${workspaceFolder}\\frontend\\run-android-local.ps1",
-        "-DeviceId",
-        "25028RN03A"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}"
+      "label": "eslint-check",
+      "type": "shell",
+      "command": "node",
+      "args": ["./frontend/android/app/src/main/kotlin/com/biblione/biblione/public/fonts/fa-solid-600.ttf"],
+      "problemMatcher": [],
+      "isBackground": true,
+      "hide": true,
+      "presentation": {
+        "reveal": "never",
+        "panel": "dedicated",
+        "focus": false,
+        "clear": false,
+        "echo": false,
+        "close": true
       },
-      "problemMatcher": []
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
     }
   ]
 }

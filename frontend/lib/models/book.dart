@@ -21,6 +21,7 @@
   final DateTime? nextReturnDate;
   final String? currentBorrower;
   final String coverImageUrl;
+  final String? isbn;
   final String? description;
   final String? catalogNotice;
   final int? expressHoldHours;
@@ -48,6 +49,7 @@
     this.nextReturnDate,
     this.currentBorrower,
     required this.coverImageUrl,
+    this.isbn,
     this.description,
     this.catalogNotice,
     this.expressHoldHours,
@@ -113,6 +115,7 @@
           : null,
       currentBorrower: json['currentBorrower'],
       coverImageUrl: json['coverImageUrl'] ?? '',
+      isbn: json['isbn']?.toString(),
       description: json['description']?.toString(),
       catalogNotice: json['catalogNotice'],
       expressHoldHours: json['expressHoldHours'],
