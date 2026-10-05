@@ -41,6 +41,7 @@ public class BookReservationService {
     private final LoanRepository loanRepository;
     private final SeatHoldRepository seatHoldRepository;
     private final WaitlistRepository waitlistRepository;
+    private final com.biblione.notification.service.NotificationService notificationService;
 
     public List<Book> searchBooks(String query, String category) {
         String q = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
@@ -140,7 +141,16 @@ public class BookReservationService {
                 .expiresAt(now.plus(holdHours, ChronoUnit.HOURS))
                 .build();
 
-        return reservationRepository.save(reservation);
+        reservation = reservationRepository.save(reservation);
+        
+        try {
+            notificationService.createSystemNotification(userId, "Book Ready for Pickup", 
+                "The book '" + book.getTitle() + "' is now available at the " + reservation.getPickupDesk() + ".");
+        } catch (Exception e) {
+            // Ignore if notification service is not available
+        }
+        
+        return reservation;
     }
 
     public WaitlistEntry joinWaitlist(CreateReservationRequest request) {

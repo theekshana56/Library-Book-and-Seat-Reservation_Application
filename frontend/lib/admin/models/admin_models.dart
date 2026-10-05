@@ -1,4 +1,4 @@
-class AdminUser {
+﻿class AdminUser {
   final String id;
   final String fullName;
   final String email;
@@ -141,6 +141,68 @@ class LibraryShelf {
     zone: json['zone']?.toString() ?? '',
     maxCapacity: (json['maxCapacity'] as num?)?.toInt() ?? 0,
     currentBookCount: (json['currentBookCount'] as num?)?.toInt() ?? 0,
+  );
+}
+
+class LibraryHall {
+  final String id;
+  final String hallCode;
+  final String name;
+  final String building;
+  final int floorCount;
+  final String description;
+
+  const LibraryHall({
+    required this.id,
+    required this.hallCode,
+    required this.name,
+    required this.building,
+    required this.floorCount,
+    required this.description,
+  });
+
+  factory LibraryHall.fromJson(Map<String, dynamic> json) => LibraryHall(
+    id: json['id']?.toString() ?? '',
+    hallCode: json['hallCode']?.toString() ?? '',
+    name: json['name']?.toString() ?? '',
+    building: json['building']?.toString() ?? '',
+    floorCount: (json['floorCount'] as num?)?.toInt() ?? 1,
+    description: json['description']?.toString() ?? '',
+  );
+}
+
+class LibrarySeat {
+  final String id;
+  final String seatCode;
+  final String hallCode;
+  final String floor;
+  final String zone;
+  final bool hasPowerOutlet;
+  final int acousticsDb;
+  final List<String> features;
+
+  const LibrarySeat({
+    required this.id,
+    required this.seatCode,
+    required this.hallCode,
+    required this.floor,
+    required this.zone,
+    required this.hasPowerOutlet,
+    required this.acousticsDb,
+    required this.features,
+  });
+
+  factory LibrarySeat.fromJson(Map<String, dynamic> json) => LibrarySeat(
+    id: json['id']?.toString() ?? '',
+    seatCode: json['seatCode']?.toString() ?? '',
+    hallCode: json['hallCode']?.toString() ?? '',
+    floor: json['floor']?.toString() ?? '',
+    zone: json['zone']?.toString() ?? '',
+    hasPowerOutlet: json['hasPowerOutlet'] == true,
+    acousticsDb: (json['acousticsDb'] as num?)?.toInt() ?? 0,
+    features: (json['features'] as List<dynamic>? ?? const [])
+        .map((feature) => feature.toString())
+        .toList(),
   );
 }
 

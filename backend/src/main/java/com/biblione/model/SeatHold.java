@@ -9,6 +9,8 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -27,6 +29,9 @@ public class SeatHold {
     private String seatName;
     private String zone;
     private String slotLabel;
+    private LocalDate date;
+    private LocalTime startTime;
+    private Integer durationMinutes;
     private List<String> amenities;
     private Instant checkInBy;
     private String status;

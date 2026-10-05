@@ -1,22 +1,28 @@
 package com.biblione.admin.service;
 
 import com.biblione.admin.dto.AdminStatsResponse;
+import com.biblione.admin.dto.CreateHallRequest;
+import com.biblione.admin.dto.CreateSeatRequest;
 import com.biblione.admin.dto.CreateTaskRequest;
 import com.biblione.admin.dto.CreateUserRequest;
 import com.biblione.admin.dto.UpdateTaskStatusRequest;
 import com.biblione.admin.model.AdminUser;
+import com.biblione.admin.model.Hall;
 import com.biblione.admin.model.Shelf;
 import com.biblione.admin.model.StaffTask;
 import com.biblione.admin.model.TaskStatus;
 import com.biblione.admin.model.UserRole;
 import com.biblione.admin.repository.AdminUserRepository;
+import com.biblione.admin.repository.HallRepository;
 import com.biblione.admin.repository.PublisherProposalRepository;
 import com.biblione.admin.repository.ShelfRepository;
 import com.biblione.admin.repository.StaffTaskRepository;
 import com.biblione.admin.dto.UpdateUserStatusRequest;
 import com.biblione.exception.ApiException;
 import com.biblione.model.Book;
+import com.biblione.model.Seat;
 import com.biblione.repository.BookRepository;
+import com.biblione.repository.SeatRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,6 +31,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +42,8 @@ public class AdminService {
     private final StaffTaskRepository taskRepository;
     private final ShelfRepository shelfRepository;
     private final BookRepository bookRepository;
+    private final SeatRepository seatRepository;
+    private final HallRepository hallRepository;
     private final PasswordEncoder passwordEncoder;
 
     public AdminUser createUser(CreateUserRequest request) {
@@ -191,6 +200,54 @@ public class AdminService {
 
     public List<Shelf> getShelves() {
         return shelfRepository.findAll();
+    }
+
+    public Hall createHall(CreateHallRequest request) {
+        String hallCode = request.hallCode().trim().toUpperCase(Locale.ROOT);
+        if (hallRepository.findByHallCodeIgnoreCase(hallCode).isPresent()) {
+            throw new ApiException(HttpStatus.CONFLICT, "A hall with this code already exists.");
+        }
+        return hallRepository.save(Hall.builder()
+                .hallCode(hallCode)
+                .name(request.name().trim())
+                .building(request.building().trim())
+                .floorCount(request.floorCount())
+                .description(blankToNull(request.description()))
+                .build());
+    }
+
+    public List<Hall> getHalls() {
+        return hallRepository.findAll();
+    }
+
+    public Seat createSeat(CreateSeatRequest request) {
+        String seatCode = request.seatCode().trim().toUpperCase(Locale.ROOT);
+        String hallCode = request.hallCode().trim().toUpperCase(Locale.ROOT);
+        if (seatRepository.findBySeatCodeIgnoreCase(seatCode).isPresent()) {
+            throw new ApiException(HttpStatus.CONFLICT, "A seat with this code already exists.");
+        }
+        if (hallRepository.findByHallCodeIgnoreCase(hallCode).isEmpty()) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "Hall not found.");
+        }
+        List<String> features = request.features() == null ? List.of() : request.features().stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(feature -> !feature.isEmpty())
+                .distinct()
+                .toList();
+        return seatRepository.save(Seat.builder()
+                .seatCode(seatCode)
+                .hallCode(hallCode)
+                .floor(request.floor().trim())
+                .zone(request.zone().trim())
+                .hasPowerOutlet(request.hasPowerOutlet())
+                .acousticsDb(request.acousticsDb())
+                .features(features)
+                .build());
+    }
+
+    public List<Seat> getSeats() {
+        return seatRepository.findAll();
     }
 
     public Shelf updateShelf(String id, Shelf update) {

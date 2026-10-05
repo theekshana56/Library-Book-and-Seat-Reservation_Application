@@ -42,6 +42,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         private final AdminUserRepository adminUserRepository;
         private final ShelfRepository shelfRepository;
         private final PasswordEncoder passwordEncoder;
+        private final com.biblione.notification.repository.NotificationRepository notificationRepository;
 
         @Value("${biblione.seed-password:Biblione-ChangeMe-2026}")
         private String seedPassword;
@@ -49,6 +50,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) {
                 seedAdminData();
+                seedMissingNotifications();
         if (bookRepository.count() > 0) {
             log.info("Catalog already seeded ({} books). Skipping.", bookRepository.count());
             return;
@@ -178,7 +180,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .userId(DEMO_USER_ID)
                 .seatCode("A04")
                 .seatName("Seat - A04")
-                .zone("Silent Pod · Level 2 Quiet Zone · Window View")
+                .zone("Silent Pod Â· Level 2 Quiet Zone Â· Window View")
                 .slotLabel("Today, 10:00 - 12:00")
                 .amenities(List.of("power", "wifi", "quiet"))
                 .checkInBy(now.plus(12, ChronoUnit.MINUTES).plus(40, ChronoUnit.SECONDS))
@@ -203,9 +205,10 @@ public class DatabaseSeeder implements CommandLineRunner {
     }
 
         private void seedAdminData() {
-                seedUser("seed-admin", "admin@biblione.edu", "Library Administrator", UserRole.ADMIN, "Library", "ADMIN");
-                seedUser("seed-staff", "staff@biblione.edu", "Library Staff", UserRole.LIBRARY_STAFF, "Library Services", "STAFF");
-                seedUser("seed-vendor", "vendor@biblione.edu", "Biblione Books Vendor", UserRole.VENDOR, "Publishing", "VENDOR");
+                seedUser("seed-admin", null, "admin@biblione.edu", "Library Administrator", UserRole.ADMIN, "Library", "ADMIN");
+                seedUser("seed-staff", null, "staff@biblione.edu", "Library Staff", UserRole.LIBRARY_STAFF, "Library Services", "STAFF");
+                seedUser("seed-vendor", null, "vendor@biblione.edu", "Biblione Books Vendor", UserRole.VENDOR, "Publishing", "VENDOR");
+                seedUser("seed-student", DEMO_USER_ID, "student@biblione.edu", "Ravindu Weerasinghe", UserRole.STUDENT, "CS Dept", "UNDERGRADUATE");
 
                 List<Shelf> shelves = List.of(
                                 Shelf.builder().shelfCode("CS-204").level("Level 2").zone("East Wing").maxCapacity(50).currentBookCount(0).build(),
@@ -215,13 +218,14 @@ public class DatabaseSeeder implements CommandLineRunner {
                                 shelfRepository.save(shelf);
                         }
                 }
-                log.info("Seeded initial admin, staff, vendor, and shelf records when absent.");
+                log.info("Seeded initial admin, staff, vendor, student, and shelf records when absent.");
         }
 
-        private void seedUser(String id, String email, String name, UserRole role, String department, String category) {
+        private void seedUser(String id, String universityId, String email, String name, UserRole role, String department, String category) {
                 if (adminUserRepository.existsByEmailIgnoreCase(email)) return;
                 adminUserRepository.save(AdminUser.builder()
                                 .id(id)
+                                .universityId(universityId)
                                 .fullName(name)
                                 .email(email)
                                 .password(passwordEncoder.encode(seedPassword))
@@ -230,5 +234,34 @@ public class DatabaseSeeder implements CommandLineRunner {
                                 .userCategory(category)
                                 .active(true)
                                 .build());
+        }
+
+        private void seedMissingNotifications() {
+                long systemNotificationCount = notificationRepository.findAll().stream().filter(n -> "SYSTEM".equals(n.getType())).count();
+                if (systemNotificationCount > 0) return;
+
+                List<Reservation> reservations = reservationRepository.findAll();
+                for (Reservation res : reservations) {
+                        notificationRepository.save(com.biblione.notification.model.Notification.builder()
+                                .userId(res.getUserId())
+                                .title("Book Reservation Placed")
+                                .message("Your reservation for '" + res.getTitle() + "' has been recorded.")
+                                .type("SYSTEM")
+                                .isRead(false)
+                                .build());
+                }
+
+                List<SeatHold> seats = seatHoldRepository.findAll();
+                for (SeatHold seat : seats) {
+                        notificationRepository.save(com.biblione.notification.model.Notification.builder()
+                                .userId(seat.getUserId())
+                                .title("Seat Hold Confirmed")
+                                .message("Your hold for seat " + seat.getSeatCode() + " is confirmed.")
+                                .type("SYSTEM")
+                                .isRead(false)
+                                .build());
+                }
+                
+                log.info("Seeded missing notifications for existing reservations and seat holds.");
         }
 }

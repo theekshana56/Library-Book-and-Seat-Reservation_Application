@@ -129,3 +129,9 @@ app.*.symbols
 !/dev/ci/**/Gemfile.lock
 backend/target/biblione-api-1.0.0.jar
 backend/target/biblione-api-1.0.0.jar.original
+backend/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst
+backend/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst
+backend/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst
+backend/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst
+backend/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/inputFiles.lst
+.idea/
