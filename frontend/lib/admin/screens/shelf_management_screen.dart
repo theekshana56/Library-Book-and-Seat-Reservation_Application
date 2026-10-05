@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_colors.dart';
@@ -110,6 +110,38 @@ class _ShelfManagementScreenState extends State<ShelfManagementScreen> {
     }
   }
 
+  Future<void> _archive(LibraryShelf shelf) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Archive shelf?'),
+        content: Text(
+          'Archive ${shelf.shelfCode}? Books and open tasks must be moved first. The record will be retained.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep shelf'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Archive'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await _api.archiveShelf(shelf.id);
+      await _load();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) => AdminPageScaffold(
     title: 'Shelf inventory',
@@ -157,7 +189,7 @@ class _ShelfManagementScreenState extends State<ShelfManagementScreen> {
                       AdminField(
                         label: 'Category zone',
                         controller: _zone,
-                        hint: 'Quiet Zone · East Wing',
+                        hint: 'Quiet Zone - East Wing',
                         validator: _required,
                       ),
                       const SizedBox(height: 10),
@@ -266,7 +298,7 @@ class _ShelfManagementScreenState extends State<ShelfManagementScreen> {
                         ),
                       ),
                       Text(
-                        '${shelf.level} · ${shelf.zone}',
+                        '${shelf.level} | ${shelf.zone}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.plusJakartaSans(
@@ -277,15 +309,27 @@ class _ShelfManagementScreenState extends State<ShelfManagementScreen> {
                     ],
                   ),
                 ),
-                IconButton(
-                  onPressed: () => _edit(shelf),
-                  tooltip: 'Edit shelf',
-                  icon: const Icon(
-                    Icons.edit_outlined,
-                    color: AppColors.emerald,
-                    size: 19,
+                if (shelf.active) ...[
+                  IconButton(
+                    onPressed: () => _edit(shelf),
+                    tooltip: 'Edit shelf',
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                      color: AppColors.emerald,
+                      size: 19,
+                    ),
                   ),
-                ),
+                  IconButton(
+                    onPressed: () => _archive(shelf),
+                    tooltip: 'Archive shelf',
+                    icon: const Icon(
+                      Icons.archive_outlined,
+                      color: Color(0xFFB45309),
+                      size: 19,
+                    ),
+                  ),
+                ] else
+                  const AdminStatusPill('ARCHIVED'),
               ],
             ),
             const SizedBox(height: 12),

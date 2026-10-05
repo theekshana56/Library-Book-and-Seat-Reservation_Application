@@ -5,18 +5,23 @@ import 'package:intl/intl.dart';
 import '../api/api_client.dart';
 import '../models/models.dart';
 import '../theme/app_colors.dart';
+import '../user_management/models/user_profile.dart';
 import '../widgets/ui_kit.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
     this.apiClient,
+    this.userProfile,
+    this.authToken,
     required this.onFindSeat,
     required this.onExploreBooks,
     required this.onViewBookings,
   });
 
   final ApiClient? apiClient;
+  final UserProfile? userProfile;
+  final String? authToken;
   final VoidCallback onFindSeat;
   final VoidCallback onExploreBooks;
   final VoidCallback onViewBookings;
@@ -43,7 +48,14 @@ class _HomeScreenState extends State<HomeScreen> {
       _error = null;
     });
     try {
-      final bookings = await _api.getBookings();
+      final profile = widget.userProfile;
+      final userId = profile?.universityId?.trim().isNotEmpty == true
+          ? profile!.universityId!.trim()
+          : profile?.id.trim();
+      if (userId == null || userId.isEmpty) {
+        throw ApiException('Sign in to view your library activity.');
+      }
+      final bookings = await _api.getBookings(userId);
       if (!mounted) return;
       setState(() {
         _bookings = bookings;
@@ -61,7 +73,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final bookings = _bookings;
-    final firstName = 'Fernando';
+    final profile = widget.userProfile;
+    final fullName = profile?.fullName.trim() ?? '';
+    final firstName = fullName.isEmpty ? 'there' : fullName.split(' ').first;
+    final memberId = profile?.universityId?.trim().isNotEmpty == true
+        ? profile!.universityId!.trim()
+        : profile?.id.trim();
     final greeting = switch (DateTime.now().hour) {
       < 12 => 'Good morning',
       < 17 => 'Good afternoon',
@@ -70,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Column(
       children: [
-        const NavyAppHeader(),
+        NavyAppHeader(authToken: widget.authToken),
         Expanded(
           child: RefreshIndicator(
             onRefresh: _load,
@@ -97,7 +114,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                _MemberBadge(userId: ApiClient.demoUserId),
+                if (memberId != null && memberId.isNotEmpty)
+                  _MemberBadge(userId: memberId),
                 const SizedBox(height: 22),
                 Row(
                   children: [
@@ -587,9 +605,7 @@ class _LoadingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Padding(
       padding: EdgeInsets.symmetric(vertical: 26),
-      child: Center(
-        child: CircularProgressIndicator(color: AppColors.emerald),
-      ),
+      child: Center(child: CircularProgressIndicator(color: AppColors.emerald)),
     );
   }
 }

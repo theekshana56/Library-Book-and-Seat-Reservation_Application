@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../debug_agent_log.dart';
@@ -237,7 +237,7 @@ class _AdminProposalReviewScreenState extends State<AdminProposalReviewScreen> {
             if (!pending && proposal.adminMessage.isNotEmpty) ...[
               const SizedBox(height: 10),
               Text(
-                'RESPONSE  ·  ${proposal.adminMessage}',
+                'RESPONSE - ${proposal.adminMessage}',
                 style: GoogleFonts.plusJakartaSans(
                   color: AppColors.emerald,
                   fontSize: 11,

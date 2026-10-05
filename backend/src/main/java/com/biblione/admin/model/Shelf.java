@@ -31,4 +31,6 @@ public class Shelf {
     private int maxCapacity;
     @Min(0)
     private int currentBookCount;
+
+    private Boolean active;
 }

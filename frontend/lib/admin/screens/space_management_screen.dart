@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_colors.dart';
@@ -70,9 +70,11 @@ class _SpaceManagementScreenState extends State<SpaceManagementScreen> {
         _seats = seats;
         _selectedHallCode =
             preferredHallCode ??
-            (halls.any((hall) => hall.hallCode == _selectedHallCode)
+            (halls.any(
+                  (hall) => hall.active && hall.hallCode == _selectedHallCode,
+                )
                 ? _selectedHallCode
-                : halls.firstOrNull?.hallCode);
+                : halls.where((hall) => hall.active).firstOrNull?.hallCode);
         _loading = false;
       });
     } catch (error) {
@@ -153,6 +155,280 @@ class _SpaceManagementScreenState extends State<SpaceManagementScreen> {
       if (mounted) setState(() => _saving = false);
     }
   }
+
+  Future<void> _editHall(LibraryHall hall) async {
+    final code = TextEditingController(text: hall.hallCode);
+    final name = TextEditingController(text: hall.name);
+    final building = TextEditingController(text: hall.building);
+    final floors = TextEditingController(text: '${hall.floorCount}');
+    final description = TextEditingController(text: hall.description);
+    final formKey = GlobalKey<FormState>();
+    final save = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit hall'),
+        content: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: code,
+                  decoration: const InputDecoration(labelText: 'Hall code'),
+                  validator: _required,
+                ),
+                TextFormField(
+                  controller: name,
+                  decoration: const InputDecoration(labelText: 'Name'),
+                  validator: _required,
+                ),
+                TextFormField(
+                  controller: building,
+                  decoration: const InputDecoration(labelText: 'Building'),
+                  validator: _required,
+                ),
+                TextFormField(
+                  controller: floors,
+                  decoration: const InputDecoration(labelText: 'Floor count'),
+                  keyboardType: TextInputType.number,
+                  validator: _positiveNumber,
+                ),
+                TextFormField(
+                  controller: description,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(dialogContext, true);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (save == true) {
+      try {
+        await _api.saveHall(hall.id, {
+          'hallCode': code.text.trim().toUpperCase(),
+          'name': name.text.trim(),
+          'building': building.text.trim(),
+          'floorCount': int.parse(floors.text),
+          'description': description.text.trim(),
+        });
+        await _load(preferredHallCode: code.text.trim().toUpperCase());
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(error.toString())));
+        }
+      }
+    }
+    code.dispose();
+    name.dispose();
+    building.dispose();
+    floors.dispose();
+    description.dispose();
+  }
+
+  Future<void> _editSeat(LibrarySeat seat) async {
+    final code = TextEditingController(text: seat.seatCode);
+    final floor = TextEditingController(text: seat.floor);
+    final acoustics = TextEditingController(text: '${seat.acousticsDb}');
+    final features = TextEditingController(text: seat.features.join(', '));
+    final formKey = GlobalKey<FormState>();
+    var hallCode = seat.hallCode;
+    var zone = seat.zone;
+    var outlet = seat.hasPowerOutlet;
+    final save = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Edit seat'),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: code,
+                    decoration: const InputDecoration(labelText: 'Seat code'),
+                    validator: _required,
+                  ),
+                  DropdownButtonFormField<String>(
+                    initialValue:
+                        _halls.any(
+                          (hall) => hall.active && hall.hallCode == hallCode,
+                        )
+                        ? hallCode
+                        : null,
+                    decoration: const InputDecoration(labelText: 'Hall'),
+                    items: _halls
+                        .where((hall) => hall.active)
+                        .map(
+                          (hall) => DropdownMenuItem(
+                            value: hall.hallCode,
+                            child: Text(hall.name),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) setDialogState(() => hallCode = value);
+                    },
+                    validator: (value) =>
+                        value == null ? 'Select a hall' : null,
+                  ),
+                  TextFormField(
+                    controller: floor,
+                    decoration: const InputDecoration(labelText: 'Floor'),
+                    validator: _required,
+                  ),
+                  DropdownButtonFormField<String>(
+                    initialValue: ['Quiet Zone', 'Social Zone'].contains(zone)
+                        ? zone
+                        : 'Quiet Zone',
+                    decoration: const InputDecoration(labelText: 'Zone'),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'Quiet Zone',
+                        child: Text('Quiet Zone'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Social Zone',
+                        child: Text('Social Zone'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) setDialogState(() => zone = value);
+                    },
+                  ),
+                  TextFormField(
+                    controller: acoustics,
+                    decoration: const InputDecoration(
+                      labelText: 'Acoustics (dB)',
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: _nonNegativeNumber,
+                  ),
+                  SwitchListTile(
+                    title: const Text('Power outlet'),
+                    value: outlet,
+                    onChanged: (value) => setDialogState(() => outlet = value),
+                  ),
+                  TextFormField(
+                    controller: features,
+                    decoration: const InputDecoration(
+                      labelText: 'Features (comma separated)',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(dialogContext, true);
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (save == true) {
+      try {
+        await _api.saveSeat(seat.id, {
+          'seatCode': code.text.trim().toUpperCase(),
+          'hallCode': hallCode,
+          'floor': floor.text.trim(),
+          'zone': zone,
+          'hasPowerOutlet': outlet,
+          'acousticsDb': int.parse(acoustics.text),
+          'features': features.text
+              .split(',')
+              .map((value) => value.trim())
+              .where((value) => value.isNotEmpty)
+              .toSet()
+              .toList(),
+        });
+        await _load(preferredHallCode: hallCode);
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(error.toString())));
+        }
+      }
+    }
+    code.dispose();
+    floor.dispose();
+    acoustics.dispose();
+    features.dispose();
+  }
+
+  Future<void> _archiveHall(LibraryHall hall) async {
+    if (!await _confirmArchive('hall ${hall.hallCode}')) return;
+    try {
+      await _api.archiveHall(hall.id);
+      await _load();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    }
+  }
+
+  Future<void> _archiveSeat(LibrarySeat seat) async {
+    if (!await _confirmArchive('seat ${seat.seatCode}')) return;
+    try {
+      await _api.archiveSeat(seat.id);
+      await _load(preferredHallCode: seat.hallCode);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    }
+  }
+
+  Future<bool> _confirmArchive(String label) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Archive record?'),
+          content: Text('Archive $label? The record will be retained.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Keep'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Archive'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
 
   @override
   Widget build(BuildContext context) => AdminPageScaffold(
@@ -288,7 +564,7 @@ class _SpaceManagementScreenState extends State<SpaceManagementScreen> {
         children: [
           const AdminSectionTitle('Add a seat'),
           const SizedBox(height: 12),
-          if (_halls.isEmpty)
+          if (!_halls.any((hall) => hall.active))
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
@@ -306,11 +582,12 @@ class _SpaceManagementScreenState extends State<SpaceManagementScreen> {
               initialValue: _selectedHallCode,
               decoration: _dropdownDecoration('Hall'),
               items: _halls
+                  .where((hall) => hall.active)
                   .map(
                     (hall) => DropdownMenuItem(
                       value: hall.hallCode,
                       child: Text(
-                        '${hall.name} · ${hall.hallCode}',
+                        '${hall.name} | ${hall.hallCode}',
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -411,9 +688,9 @@ class _SpaceManagementScreenState extends State<SpaceManagementScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${hall.name} · ${hall.hallCode}', style: _titleStyle()),
+                Text('${hall.name} | ${hall.hallCode}', style: _titleStyle()),
                 Text(
-                  '${hall.building} · ${hall.floorCount} floors',
+                  '${hall.building} | ${hall.floorCount} floors',
                   style: _bodyStyle(),
                 ),
                 if (hall.description.isNotEmpty)
@@ -421,6 +698,19 @@ class _SpaceManagementScreenState extends State<SpaceManagementScreen> {
               ],
             ),
           ),
+          if (hall.active) ...[
+            IconButton(
+              onPressed: () => _editHall(hall),
+              tooltip: 'Edit hall',
+              icon: const Icon(Icons.edit_outlined),
+            ),
+            IconButton(
+              onPressed: () => _archiveHall(hall),
+              tooltip: 'Archive hall',
+              icon: const Icon(Icons.archive_outlined),
+            ),
+          ] else
+            const AdminStatusPill('ARCHIVED'),
         ],
       ),
     ),
@@ -438,17 +728,30 @@ class _SpaceManagementScreenState extends State<SpaceManagementScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${seat.seatCode} · ${seat.hallCode}',
+                  '${seat.seatCode} | ${seat.hallCode}',
                   style: _titleStyle(),
                 ),
-                Text('${seat.floor} · ${seat.zone}', style: _bodyStyle()),
+                Text('${seat.floor} | ${seat.zone}', style: _bodyStyle()),
                 Text(
-                  '${seat.acousticsDb} dB · ${seat.hasPowerOutlet ? 'Power outlet' : 'No outlet'}${seat.features.isEmpty ? '' : ' · ${seat.features.join(', ')}'}',
+                  '${seat.acousticsDb} dB | ${seat.hasPowerOutlet ? 'Power outlet' : 'No outlet'}${seat.features.isEmpty ? '' : ' | ${seat.features.join(', ')}'}',
                   style: _bodyStyle(),
                 ),
               ],
             ),
           ),
+          if (seat.active) ...[
+            IconButton(
+              onPressed: () => _editSeat(seat),
+              tooltip: 'Edit seat',
+              icon: const Icon(Icons.edit_outlined),
+            ),
+            IconButton(
+              onPressed: () => _archiveSeat(seat),
+              tooltip: 'Archive seat',
+              icon: const Icon(Icons.archive_outlined),
+            ),
+          ] else
+            const AdminStatusPill('ARCHIVED'),
         ],
       ),
     ),

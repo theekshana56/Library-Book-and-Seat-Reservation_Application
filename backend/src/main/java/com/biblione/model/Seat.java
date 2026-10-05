@@ -1,5 +1,6 @@
 package com.biblione.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,6 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import java.time.Instant;
 import java.util.List;
 
 @Data
@@ -39,4 +41,9 @@ public class Seat {
     @Min(0)
     private int acousticsDb;
     private List<String> features;
+    @JsonIgnore
+    private String bookingLockToken;
+    @JsonIgnore
+    private Instant bookingLockExpiresAt;
+    private Boolean active;
 }

@@ -1,6 +1,7 @@
 package com.biblione.service;
 
 import com.biblione.dto.CreateReservationRequest;
+import com.biblione.dto.UpdateReservationRequest;
 import com.biblione.dto.UserBookingsResponse;
 import com.biblione.exception.ApiException;
 import com.biblione.model.Book;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
@@ -30,6 +32,7 @@ public class BookReservationService {
 
     static final List<String> ACTIVE_RESERVATION_STATUSES = List.of("READY_FOR_PICKUP", "CONFIRMED");
     static final int DEFAULT_LOAN_LIMIT = 5;
+    private static final Duration RESERVATION_MANAGEMENT_WINDOW = Duration.ofHours(24);
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -38,11 +41,13 @@ public class BookReservationService {
     private final LoanRepository loanRepository;
     private final SeatHoldRepository seatHoldRepository;
     private final WaitlistRepository waitlistRepository;
+    private final com.biblione.notification.service.NotificationService notificationService;
 
     public List<Book> searchBooks(String query, String category) {
         String q = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
         String cat = category == null || "All Topics".equalsIgnoreCase(category.trim()) ? "" : category.trim();
         var results = bookRepository.findAll().stream()
+                .filter(book -> !Boolean.FALSE.equals(book.getActive()))
                 .filter(book -> cat.isEmpty() || book.getCategory() != null
                         && book.getCategory().equalsIgnoreCase(cat))
                 .filter(book -> q.isEmpty() || matchesQuery(book, q))
@@ -86,6 +91,7 @@ public class BookReservationService {
 
     public Book getBook(String id) {
         return bookRepository.findById(id)
+                .filter(book -> !Boolean.FALSE.equals(book.getActive()))
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Book not found"));
     }
 
@@ -137,7 +143,16 @@ public class BookReservationService {
                 .expiresAt(now.plus(holdHours, ChronoUnit.HOURS))
                 .build();
 
-        return reservationRepository.save(reservation);
+        reservation = reservationRepository.save(reservation);
+        
+        try {
+            notificationService.createSystemNotification(userId, "Book Ready for Pickup", 
+                "The book '" + book.getTitle() + "' is now available at the " + reservation.getPickupDesk() + ".");
+        } catch (Exception e) {
+            // Ignore if notification service is not available
+        }
+        
+        return reservation;
     }
 
     public WaitlistEntry joinWaitlist(CreateReservationRequest request) {
@@ -173,6 +188,7 @@ public class BookReservationService {
         if ("CANCELLED".equals(reservation.getStatus()) || "EXPIRED".equals(reservation.getStatus())) {
             throw new ApiException(HttpStatus.CONFLICT, "Reservation is no longer active.");
         }
+        requireManageableReservation(reservation);
 
         reservation.setStatus("CANCELLED");
         reservationRepository.save(reservation);
@@ -183,6 +199,70 @@ public class BookReservationService {
         });
 
         return reservation;
+    }
+
+    public Reservation updateReservation(String reservationId, UpdateReservationRequest request) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Reservation not found"));
+
+        requireManageableReservation(reservation);
+        if (reservation.getBookId().equals(request.getBookId())) {
+            return reservation;
+        }
+
+        Book replacement = getBook(request.getBookId());
+        if (!replacement.isAvailable()) {
+            throw new ApiException(HttpStatus.CONFLICT, "The selected book is not available.");
+        }
+        if (reservationRepository.existsByUserIdAndBookIdAndStatusIn(
+                reservation.getUserId(), replacement.getId(), ACTIVE_RESERVATION_STATUSES)) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "You already have an active hold on the selected book.");
+        }
+
+        Book currentBook = bookRepository.findById(reservation.getBookId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Current reserved book not found"));
+
+        replacement.setAvailableCopies(replacement.getAvailableCopies() - 1);
+        bookRepository.save(replacement);
+
+        reservation.setBookId(replacement.getId());
+        reservation.setTitle(replacement.getTitle());
+        reservation.setAuthor(replacement.getAuthor());
+        reservation.setCoverImageUrl(replacement.getCoverImageUrl());
+        reservation.setShelfCode(replacement.getShelfCode());
+        reservation.setShelfDetail(replacement.getShelfDetail());
+        reservation.setFormat(replacement.getFormat() == null ? "Print Copy" : replacement.getFormat());
+        reservation.setPickupDesk(blankTo(replacement.getPickupDesk(), "Central Circulation Desk"));
+        reservation.setPickupDeskDetail(blankTo(
+                replacement.getPickupDeskDetail(), "Level 1 • East Atrium Entrance"));
+        reservation.setHoldIdCode(generateHoldId(replacement));
+        Reservation updated = reservationRepository.save(reservation);
+
+        currentBook.setAvailableCopies(Math.min(
+                currentBook.getTotalCopies(), currentBook.getAvailableCopies() + 1));
+        bookRepository.save(currentBook);
+        return updated;
+    }
+
+    private void requireManageableReservation(Reservation reservation) {
+        if (!ACTIVE_RESERVATION_STATUSES.contains(reservation.getStatus())) {
+            throw new ApiException(HttpStatus.CONFLICT, "Reservation is no longer active.");
+        }
+
+        Instant createdAt = reservation.getCreatedAt();
+        if (createdAt == null) {
+            throw new ApiException(HttpStatus.CONFLICT, "Reservation has no valid management window.");
+        }
+
+        Instant deadline = createdAt.plus(RESERVATION_MANAGEMENT_WINDOW);
+        if (reservation.getExpiresAt() != null && reservation.getExpiresAt().isBefore(deadline)) {
+            deadline = reservation.getExpiresAt();
+        }
+        if (!Instant.now().isBefore(deadline)) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "Book holds can only be changed or cancelled within 24 hours of being placed.");
+        }
     }
 
     public Loan renewLoan(String loanId) {

@@ -1,18 +1,22 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../seat_booking/models/seat_booking_models.dart';
+import '../../seat_booking/screens/review_booking_screen.dart';
 import '../../theme/app_colors.dart';
 import '../models/seat_recommendation.dart';
 
 class RankedResultsScreen extends StatefulWidget {
   final SeatRecommendationResponse response;
   final SeatSearchRequest request;
+  final String? userId;
 
   const RankedResultsScreen({
     super.key,
     required this.response,
     required this.request,
+    this.userId,
   });
 
   @override
@@ -128,7 +132,7 @@ class _RankedResultsScreenState extends State<RankedResultsScreen> {
               ),
               const SizedBox(height: 3),
               Text(
-                '${widget.request.zonePreference} · ${DateFormat('EEE, MMM d').format(widget.request.date)} · ${DateFormat('h:mm a').format(DateFormat('HH:mm:ss').parse(widget.request.startTime))}',
+                '${widget.request.zonePreference} | ${DateFormat('EEE, MMM d').format(widget.request.date)} | ${DateFormat('h:mm a').format(DateFormat('HH:mm:ss').parse(widget.request.startTime))}',
                 style: GoogleFonts.plusJakartaSans(
                   color: const Color(0xFFCAD6E1),
                   fontSize: 10,
@@ -223,7 +227,7 @@ class _RankedResultsScreenState extends State<RankedResultsScreen> {
         ),
         const SizedBox(height: 3),
         Text(
-          '${seat.floor} · ${seat.zone}',
+          '${seat.floor} | ${seat.zone}',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: _muted(11),
@@ -234,7 +238,7 @@ class _RankedResultsScreenState extends State<RankedResultsScreen> {
             Expanded(
               child: _spec(
                 Icons.graphic_eq,
-                '${seat.acousticsDb} dB · ${_acousticLabel(seat.acousticsDb)}',
+                '${seat.acousticsDb} dB | ${_acousticLabel(seat.acousticsDb)}',
               ),
             ),
             Expanded(
@@ -339,41 +343,93 @@ class _RankedResultsScreenState extends State<RankedResultsScreen> {
     ),
   );
 
-  Future<void> _showSeatDetails(SeatMatch seat) => showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    backgroundColor: Colors.white,
-    builder: (context) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(22, 8, 22, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Seat - ${seat.seatCode}',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
+  Future<void> _showSeatDetails(SeatMatch seat) async {
+    final startTime = DateFormat('HH:mm:ss').parse(widget.request.startTime);
+    final endTime = startTime.add(
+      Duration(minutes: widget.request.durationMinutes),
+    );
+    final startLabel = DateFormat('h:mm a').format(startTime);
+    final endLabel = DateFormat('h:mm a').format(endTime);
+    final canBook = widget.userId?.trim().isNotEmpty == true;
+    final shouldBook = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 8, 22, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Seat - ${seat.seatCode}',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
-            ),
-            const SizedBox(height: 6),
-            Text('${seat.floor} · ${seat.zone}', style: _muted(12)),
-            const SizedBox(height: 12),
-            Text(
-              '${seat.acousticsDb} dB · ${seat.hasPowerOutlet ? 'Power outlet available' : 'No power outlet'}',
-              style: _muted(12),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Seat reservations are not enabled in this module yet.',
-              style: _muted(11),
-            ),
-          ],
+              const SizedBox(height: 6),
+              Text('${seat.floor} · ${seat.zone}', style: _muted(12)),
+              const SizedBox(height: 12),
+              Text(
+                '${seat.acousticsDb} dB · ${seat.hasPowerOutlet ? 'Power outlet available' : 'No power outlet'}',
+                style: _muted(12),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '${DateFormat('EEE, MMM d').format(widget.request.date)} · $startLabel–$endLabel',
+                style: _muted(12),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: canBook
+                      ? () => Navigator.pop(sheetContext, true)
+                      : null,
+                  icon: const Icon(Icons.event_available_rounded),
+                  label: Text(
+                    canBook ? 'Continue to booking' : 'Sign in to book a seat',
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.emerald,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+    if (shouldBook != true || !mounted) return;
+
+    final bookingDate = DateFormat('yyyy-MM-dd').format(widget.request.date);
+    final bookingEndTime = DateFormat('HH:mm:ss').format(endTime);
+    final selectedSeat = SeatMapSeat(
+      id: seat.id,
+      seatCode: seat.seatCode,
+      hallCode: '',
+      floor: seat.floor,
+      zone: seat.zone,
+      hasPowerOutlet: seat.hasPowerOutlet,
+      acousticsDb: seat.acousticsDb,
+      features: seat.features,
+      available: true,
+    );
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => ReviewBookingScreen(
+          seat: selectedSeat,
+          bookingDate: bookingDate,
+          startTime: widget.request.startTime,
+          endTime: bookingEndTime,
+          userId: widget.userId,
+        ),
+      ),
+    );
+  }
 
   String _acousticLabel(int db) => db < 25
       ? 'Silent'

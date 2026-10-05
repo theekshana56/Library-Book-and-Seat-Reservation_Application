@@ -9,6 +9,7 @@ import java.util.List;
 public interface StaffTaskRepository extends MongoRepository<StaffTask, String> {
     List<StaffTask> findByAssignedStaffIdOrderByCreatedAtDesc(String assignedStaffId);
     List<StaffTask> findByTargetShelfCode(String targetShelfCode);
-    boolean existsByBookIdAndStatusNot(String bookId, TaskStatus status);
+    boolean existsByBookIdAndStatusNotIn(String bookId, List<TaskStatus> statuses);
     long countByStatusNot(TaskStatus status);
+    long countByStatusNotIn(List<TaskStatus> statuses);
 }

@@ -4,14 +4,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:biblione/api/api_client.dart';
 import 'package:biblione/models/models.dart';
 import 'package:biblione/screens/home_screen.dart';
+import 'package:biblione/user_management/models/user_profile.dart';
 
 class _HomeApi extends ApiClient {
   int calls = 0;
+  final requestedUserIds = <String?>[];
   bool failFirstRequest = false;
 
   @override
-  Future<UserBookings> getBookings() async {
+  Future<UserBookings> getBookings([String? userId]) async {
     calls++;
+    requestedUserIds.add(userId);
     if (failFirstRequest && calls == 1) {
       throw ApiException('API unavailable');
     }
@@ -39,6 +42,13 @@ void main() {
         home: Scaffold(
           body: HomeScreen(
             apiClient: api,
+            userProfile: const UserProfile(
+              id: 'user-1',
+              universityId: 'IT23773158',
+              fullName: 'Ravindu Weerasinghe',
+              email: 'ravindu@example.edu',
+              role: 'STUDENT',
+            ),
             onFindSeat: () => openedSeats = true,
             onExploreBooks: () {},
             onViewBookings: () {},
@@ -49,7 +59,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(api.calls, 1);
+    expect(api.requestedUserIds, ['IT23773158']);
     expect(find.text('IT23773158'), findsOneWidget);
+    expect(find.textContaining('Ravindu 👋'), findsOneWidget);
     expect(find.text('YOUR LIBRARY SNAPSHOT'), findsOneWidget);
     await tester.tap(find.text('Find a desk'));
     expect(openedSeats, isTrue);
@@ -73,6 +85,13 @@ void main() {
         home: Scaffold(
           body: HomeScreen(
             apiClient: api,
+            userProfile: const UserProfile(
+              id: 'user-1',
+              universityId: 'IT23773158',
+              fullName: 'Ravindu Weerasinghe',
+              email: 'ravindu@example.edu',
+              role: 'STUDENT',
+            ),
             onFindSeat: () {},
             onExploreBooks: () {},
             onViewBookings: () {},
@@ -93,5 +112,32 @@ void main() {
 
     expect(api.calls, 2);
     expect(find.text('YOUR LIBRARY SNAPSHOT'), findsOneWidget);
+  });
+
+  testWidgets('home does not fall back to seeded demo member data', (
+    tester,
+  ) async {
+    final api = _HomeApi();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: HomeScreen(
+            apiClient: api,
+            onFindSeat: () {},
+            onExploreBooks: () {},
+            onViewBookings: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(api.calls, 0);
+    expect(find.text('there 👋'), findsNothing);
+    expect(
+      find.text('Sign in to view your library activity.'),
+      findsOneWidget,
+    );
   });
 }

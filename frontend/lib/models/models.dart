@@ -1,4 +1,4 @@
-class Reservation {
+﻿class Reservation {
   final String id;
   final String holdIdCode;
   final String userId;

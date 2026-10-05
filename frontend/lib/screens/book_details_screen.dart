@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../api/api_client.dart';
@@ -25,8 +25,11 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   Book? _book;
   List<LibraryShelf> _shelves = [];
   bool _loading = true;
+  bool _summaryLoading = false;
   bool _summaryExpanded = false;
   bool _joiningWaitlist = false;
+  String? _summary;
+  String? _summaryError;
 
   @override
   void initState() {
@@ -48,8 +51,41 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
         _shelves = shelves;
         _loading = false;
       });
+      await _loadSummary(book);
     } catch (_) {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _loadSummary(Book book) async {
+    final existingSummary = book.description?.trim();
+    if (existingSummary != null && existingSummary.isNotEmpty) {
+      setState(() {
+        _summary = existingSummary;
+        _summaryError = null;
+        _summaryLoading = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _summary = null;
+      _summaryError = null;
+      _summaryLoading = true;
+    });
+    try {
+      final summary = await _api.getBookSummary(book);
+      if (!mounted) return;
+      setState(() {
+        _summary = summary;
+        _summaryLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _summaryError = error.toString();
+        _summaryLoading = false;
+      });
     }
   }
 
@@ -140,7 +176,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   }
 
   Widget _bookSummary(Book book) {
-    final summary = book.description?.trim();
+    final summary = _summary ?? book.description?.trim();
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -172,14 +208,31 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          if (summary == null || summary.isEmpty)
-            Text(
-              'A summary is not available for this title yet.',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 13,
-                height: 1.5,
-                color: AppColors.textMuted,
-              ),
+          if (_summaryLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (summary == null || summary.isEmpty)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _summaryError == null
+                      ? 'A summary is not available for this title yet.'
+                      : 'Unable to load the summary. $_summaryError',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    height: 1.5,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () => _loadSummary(book),
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: const Text('Try again'),
+                ),
+              ],
             )
           else ...[
             Text(
@@ -316,11 +369,11 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             ),
             child: Text(
               book.isAvailable
-                  ? '●  AVAILABLE NOW'
+                  ? 'AVAILABLE NOW'
                   : book.inventoryStatus == 'PENDING_SHELVING' ||
                         book.shelfCode.trim().isEmpty
-                  ? '●  AWAITING SHELVING'
-                  : '●  IN CIRCULATION',
+                  ? 'AWAITING SHELVING'
+                  : 'IN CIRCULATION',
               textAlign: TextAlign.center,
               style: GoogleFonts.plusJakartaSans(
                 color: AppColors.mintText,
