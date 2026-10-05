@@ -1,19 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import '../models/seat_booking_models.dart';
 
 class CheckinSuccessScreen extends StatelessWidget {
-  final String seatNumber;
+  final SeatBookingRecord booking;
+  final SeatMapSeat seat;
 
   const CheckinSuccessScreen({
     super.key,
-    required this.seatNumber,
+    required this.booking,
+    required this.seat,
   });
+
+  String _formatTime(String value) {
+    try {
+      return DateFormat('h:mm a').format(DateFormat('HH:mm:ss').parse(value));
+    } on FormatException {
+      return value;
+    }
+  }
+
+  String _formatDate(String value) {
+    final date = DateTime.tryParse(value);
+    return date == null ? value : DateFormat('dd MMMM yyyy').format(date);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final checkinTime =
-    TimeOfDay.fromDateTime(
-      DateTime.now(),
-    ).format(context);
+    final checkInDateTime = DateTime.tryParse(booking.checkInTime ?? '');
+    final checkinTime = checkInDateTime == null
+        ? TimeOfDay.fromDateTime(DateTime.now()).format(context)
+        : TimeOfDay.fromDateTime(checkInDateTime).format(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFA),
@@ -105,7 +123,7 @@ class CheckinSuccessScreen extends StatelessWidget {
                         BorderRadius.circular(14),
                       ),
                       child: Text(
-                        seatNumber,
+                        booking.seatCode,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 20,
@@ -118,7 +136,7 @@ class CheckinSuccessScreen extends StatelessWidget {
                     const SizedBox(height: 15),
 
                     Text(
-                      'Seat $seatNumber',
+                      'Seat ${booking.seatCode}',
                       style: const TextStyle(
                         color:
                         Color(0xFF173B46),
@@ -132,14 +150,21 @@ class CheckinSuccessScreen extends StatelessWidget {
 
                     _row(
                       'Location',
-                      'Level 2 Quiet Zone',
+                      '${seat.floor} ${seat.zone}',
                     ),
 
                     const Divider(height: 26),
 
                     _row(
                       'Session',
-                      '10:00 AM – 12:00 PM',
+                      '${_formatTime(booking.startTime)} - ${_formatTime(booking.endTime)}',
+                    ),
+
+                    const Divider(height: 26),
+
+                    _row(
+                      'Booking Date',
+                      _formatDate(booking.bookingDate),
                     ),
 
                     const Divider(height: 26),
@@ -197,10 +222,7 @@ class CheckinSuccessScreen extends StatelessWidget {
                   ),
 
                   onPressed: () {
-                    Navigator.popUntil(
-                      context,
-                          (route) => route.isFirst,
-                    );
+                    Navigator.of(context).pop();
                   },
 
                   child: const Text(

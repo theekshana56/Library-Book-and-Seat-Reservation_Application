@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class QRErrorScreen extends StatelessWidget {
   final String seatNumber;
   final String scannedValue;
+  final String errorMessage;
 
   const QRErrorScreen({
     super.key,
     required this.seatNumber,
     required this.scannedValue,
+    required this.errorMessage,
   });
 
   @override
@@ -20,9 +22,7 @@ class QRErrorScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         title: const Text(
           'Check-in',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
 
@@ -31,12 +31,7 @@ class QRErrorScreen extends StatelessWidget {
           physics: const BouncingScrollPhysics(
             parent: AlwaysScrollableScrollPhysics(),
           ),
-          padding: const EdgeInsets.fromLTRB(
-            18,
-            24,
-            18,
-            30,
-          ),
+          padding: const EdgeInsets.fromLTRB(18, 24, 18, 30),
 
           child: Column(
             children: [
@@ -67,10 +62,10 @@ class QRErrorScreen extends StatelessWidget {
 
               const SizedBox(height: 7),
 
-              const Text(
-                'The scanned QR code does not match your reserved seat.',
+              Text(
+                errorMessage,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Color(0xFF78868A),
                   fontSize: 12,
                   height: 1.4,
@@ -84,52 +79,34 @@ class QRErrorScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius:
-                  BorderRadius.circular(18),
-                  border: Border.all(
-                    color: const Color(0xFFE1E8E7),
-                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFE1E8E7)),
                 ),
 
                 child: Column(
                   children: [
-                    _row(
-                      'Reserved Seat',
-                      seatNumber,
-                    ),
+                    _row('Reserved Seat', seatNumber),
 
                     const Divider(height: 26),
 
-                    _row(
-                      'Expected QR',
-                      'SEAT:$seatNumber',
-                    ),
+                    _row('Expected QR', 'SEAT:$seatNumber'),
 
                     const Divider(height: 26),
 
-                    _row(
-                      'Scanned QR',
-                      scannedValue,
-                    ),
+                    _row('Scanned QR', scannedValue),
 
                     const Divider(height: 26),
 
                     const Row(
-                      crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.error_outline,
-                          color:
-                          Color(0xFFD9534F),
-                        ),
+                        Icon(Icons.error_outline, color: Color(0xFFD9534F)),
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'QR code does not belong to your reserved desk.',
+                            'Check that this booking is active and scan the QR code attached to the reserved seat.',
                             style: TextStyle(
-                              color:
-                              Color(0xFF173B46),
+                              color: Color(0xFF173B46),
                               fontSize: 12,
                             ),
                           ),
@@ -146,24 +123,18 @@ class QRErrorScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF8E8),
-                  borderRadius:
-                  BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Row(
-                  crossAxisAlignment:
-                  CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.lightbulb_outline,
-                      color: Color(0xFFD49A00),
-                    ),
+                    Icon(Icons.lightbulb_outline, color: Color(0xFFD49A00)),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'Go to your reserved desk and scan the QR code attached to that desk.',
                         style: TextStyle(
-                          color:
-                          Color(0xFF66511B),
+                          color: Color(0xFF66511B),
                           fontSize: 11,
                           height: 1.4,
                         ),
@@ -180,13 +151,10 @@ class QRErrorScreen extends StatelessWidget {
                 height: 50,
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                    const Color(0xFF008C72),
-                    foregroundColor:
-                    Colors.white,
+                    backgroundColor: const Color(0xFF008C72),
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius:
-                      BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
 
@@ -194,16 +162,11 @@ class QRErrorScreen extends StatelessWidget {
                     Navigator.pop(context);
                   },
 
-                  icon: const Icon(
-                    Icons.qr_code_scanner,
-                  ),
+                  icon: const Icon(Icons.qr_code_scanner),
 
                   label: const Text(
                     'Scan Again',
-                    style: TextStyle(
-                      fontWeight:
-                      FontWeight.bold,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -216,20 +179,13 @@ class QRErrorScreen extends StatelessWidget {
     );
   }
 
-  Widget _row(
-      String title,
-      String value,
-      ) {
+  Widget _row(String title, String value) {
     return Row(
-      mainAxisAlignment:
-      MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           title,
-          style: const TextStyle(
-            color: Color(0xFF809094),
-            fontSize: 11,
-          ),
+          style: const TextStyle(color: Color(0xFF809094), fontSize: 11),
         ),
 
         const SizedBox(width: 15),

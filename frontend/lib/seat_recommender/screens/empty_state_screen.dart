@@ -142,7 +142,7 @@ class _EmptyStateScreenState extends State<EmptyStateScreen> {
       ),
       const SizedBox(height: 7),
       Text(
-        'We couldnâ€™t find an open seat matching every preference. Here are the closest available options.',
+        'We could not find an open seat matching every preference. Here are the closest available options.',
         textAlign: TextAlign.center,
         style: GoogleFonts.plusJakartaSans(
           color: AppColors.textMuted,
@@ -352,10 +352,10 @@ class _EmptyStateScreenState extends State<EmptyStateScreen> {
               ),
             ),
             const SizedBox(height: 6),
-            Text('${seat.floor} Â· ${seat.zone}', style: _muted(12)),
+            Text('${seat.floor} | ${seat.zone}', style: _muted(12)),
             const SizedBox(height: 12),
             Text(
-              '${seat.acousticsDb} dB Â· ${seat.hasPowerOutlet ? 'Power outlet available' : 'No power outlet'}',
+              '${seat.acousticsDb} dB | ${seat.hasPowerOutlet ? 'Power outlet available' : 'No power outlet'}',
               style: _muted(12),
             ),
             const SizedBox(height: 16),
