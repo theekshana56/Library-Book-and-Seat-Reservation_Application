@@ -272,6 +272,14 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   }
 
   Widget _reservationCard(Reservation r) {
+    final deadline = _reservationManagementDeadline(r);
+    final canManage =
+        DateTime.now().isBefore(deadline) &&
+        (r.status == 'READY_FOR_PICKUP' || r.status == 'CONFIRMED');
+    final remaining = deadline.difference(DateTime.now());
+    final windowLabel = canManage
+        ? 'Editable for ${remaining.inHours}h ${remaining.inMinutes.remainder(60)}m'
+        : 'Change window closed';
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(14),
@@ -299,7 +307,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
               ),
               const SizedBox(width: 4),
               Text(
-                '24h Window Left',
+                windowLabel,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -434,21 +442,153 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                   onPressed: () => _showBarcode(r),
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: SoftButton(
+                  label: 'Edit Pickup',
+                  icon: Icons.edit_outlined,
+                  onPressed: canManage ? () => _editReservation(r) : null,
+                ),
+              ),
               const SizedBox(width: 8),
-              SoftButton(
-                label: 'Cancel',
-                icon: Icons.close,
-                expanded: false,
-                onPressed: () async {
-                  await _api.cancelReservation(r.id);
-                  _load();
-                },
+              Expanded(
+                child: SoftButton(
+                  label: 'Cancel',
+                  icon: Icons.close,
+                  foreground: const Color(0xFFB42318),
+                  onPressed: canManage ? () => _deleteReservation(r) : null,
+                ),
               ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  DateTime _reservationManagementDeadline(Reservation reservation) {
+    final policyDeadline = reservation.createdAt.add(const Duration(hours: 24));
+    return reservation.expiresAt.isBefore(policyDeadline)
+        ? reservation.expiresAt
+        : policyDeadline;
+  }
+
+  Future<void> _editReservation(Reservation reservation) async {
+    final deskController = TextEditingController(text: reservation.pickupDesk);
+    final detailController = TextEditingController(
+      text: reservation.pickupDeskDetail,
+    );
+    final formKey = GlobalKey<FormState>();
+    try {
+      final pickupDetails = await showDialog<(String, String)>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Edit pickup details'),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: deskController,
+                  decoration: const InputDecoration(labelText: 'Pickup desk'),
+                  textCapitalization: TextCapitalization.words,
+                  validator: _requiredPickupValue,
+                ),
+                TextFormField(
+                  controller: detailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Pickup location details',
+                  ),
+                  textCapitalization: TextCapitalization.sentences,
+                  validator: _requiredPickupValue,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Keep current'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(dialogContext, (
+                    deskController.text.trim(),
+                    detailController.text.trim(),
+                  ));
+                }
+              },
+              child: const Text('Save changes'),
+            ),
+          ],
+        ),
+      );
+      if (pickupDetails == null || !mounted) return;
+
+      await _api.updateReservation(
+        reservation.id,
+        pickupDesk: pickupDetails.$1,
+        pickupDeskDetail: pickupDetails.$2,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Pickup details updated.')));
+      await _load();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      deskController.dispose();
+      detailController.dispose();
+    }
+  }
+
+  String? _requiredPickupValue(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'This field is required.';
+    }
+    return null;
+  }
+
+  Future<void> _deleteReservation(Reservation reservation) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cancel book hold?'),
+        content: Text('Cancel the hold for "${reservation.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep hold'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Cancel hold'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await _api.deleteReservation(reservation.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Book hold cancelled.')));
+      await _load();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
+    }
   }
 
   Widget _seatCard(SeatHold s) {
