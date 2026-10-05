@@ -7,8 +7,5 @@ import lombok.Data;
 public class UpdateReservationRequest {
 
     @NotBlank
-    private String pickupDesk;
-
-    @NotBlank
-    private String pickupDeskDetail;
+    private String bookId;
 }

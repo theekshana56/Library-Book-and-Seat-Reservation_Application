@@ -178,36 +178,62 @@ class BookReservationServiceTest {
     }
 
     @Test
-    void updateReservationChangesPickupDetailsWithinManagementWindow() {
+    void updateReservationChangesBookAndTransfersStockWithinManagementWindow() {
         Reservation reservation = Reservation.builder()
                 .id("res-1")
+                .userId("user-1")
+                .bookId("old-book")
                 .status("READY_FOR_PICKUP")
                 .createdAt(Instant.now())
                 .expiresAt(Instant.now().plus(24, ChronoUnit.HOURS))
                 .build();
+        Book oldBook = Book.builder()
+                .id("old-book")
+                .availableCopies(1)
+                .totalCopies(3)
+                .build();
+        Book replacement = Book.builder()
+                .id("new-book")
+                .title("New Book")
+                .author("New Author")
+                .availableCopies(2)
+                .totalCopies(3)
+                .shelfCode("CS-210")
+                .pickupDesk("North Desk")
+                .pickupDeskDetail("Level 2, North Entrance")
+                .build();
         UpdateReservationRequest request = new UpdateReservationRequest();
-        request.setPickupDesk("North Desk");
-        request.setPickupDeskDetail("Level 2, North Entrance");
+        request.setBookId("new-book");
         when(reservationRepository.findById("res-1")).thenReturn(Optional.of(reservation));
         when(reservationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(reservationRepository.existsByUserIdAndBookIdAndStatusIn(
+                "user-1", "new-book", BookReservationService.ACTIVE_RESERVATION_STATUSES))
+                .thenReturn(false);
+        when(bookRepository.findById("new-book")).thenReturn(Optional.of(replacement));
+        when(bookRepository.findById("old-book")).thenReturn(Optional.of(oldBook));
+        when(bookRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         Reservation updated = service.updateReservation("res-1", request);
 
+        assertThat(updated.getBookId()).isEqualTo("new-book");
+        assertThat(updated.getTitle()).isEqualTo("New Book");
         assertThat(updated.getPickupDesk()).isEqualTo("North Desk");
-        assertThat(updated.getPickupDeskDetail()).isEqualTo("Level 2, North Entrance");
+        assertThat(replacement.getAvailableCopies()).isEqualTo(1);
+        assertThat(oldBook.getAvailableCopies()).isEqualTo(2);
     }
 
     @Test
     void updateReservationIsRejectedAfterManagementWindow() {
         Reservation reservation = Reservation.builder()
                 .id("res-1")
+                .userId("user-1")
+                .bookId("old-book")
                 .status("READY_FOR_PICKUP")
                 .createdAt(Instant.now().minus(25, ChronoUnit.HOURS))
                 .expiresAt(Instant.now().plus(1, ChronoUnit.HOURS))
                 .build();
         UpdateReservationRequest request = new UpdateReservationRequest();
-        request.setPickupDesk("North Desk");
-        request.setPickupDeskDetail("Level 2, North Entrance");
+        request.setBookId("new-book");
         when(reservationRepository.findById("res-1")).thenReturn(Optional.of(reservation));
 
         assertThatThrownBy(() -> service.updateReservation("res-1", request))

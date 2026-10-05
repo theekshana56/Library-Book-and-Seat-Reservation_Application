@@ -1,19 +1,16 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../admin/screens/admin_dashboard_screen.dart';
 import '../../widgets/ui_kit.dart';
 import '../controllers/auth_controller.dart';
 import 'change_password_screen.dart';
 import 'edit_profile_screen.dart';
-import '../widgets/active_bookings_view.dart';
 
 class ProfileScreen extends StatelessWidget {
   final AuthController authController;
 
-  const ProfileScreen({
-    super.key,
-    required this.authController,
-  });
+  const ProfileScreen({super.key, required this.authController});
 
   String _getInitials(String name) {
     return AuthController.getInitialsForName(name);
@@ -235,9 +232,8 @@ class ProfileScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => EditProfileScreen(
-                            authController: authController,
-                          ),
+                          builder: (_) =>
+                              EditProfileScreen(authController: authController),
                         ),
                       );
                     },
@@ -399,11 +395,6 @@ class ProfileScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    ActiveBookingsView(
-                      userId: user.universityId ?? user.id,
                     ),
                     const SizedBox(height: 16),
 
@@ -780,11 +771,7 @@ class _MenuTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Icon(
-              icon,
-              size: 20,
-              color: iconColor ?? const Color(0xFF475569),
-            ),
+            Icon(icon, size: 20, color: iconColor ?? const Color(0xFF475569)),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
@@ -938,5 +925,3 @@ class _PreferenceSwitchState extends State<_PreferenceSwitch> {
     );
   }
 }
-
-

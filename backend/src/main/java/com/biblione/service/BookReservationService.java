@@ -204,9 +204,43 @@ public class BookReservationService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Reservation not found"));
 
         requireManageableReservation(reservation);
-        reservation.setPickupDesk(request.getPickupDesk().trim());
-        reservation.setPickupDeskDetail(request.getPickupDeskDetail().trim());
-        return reservationRepository.save(reservation);
+        if (reservation.getBookId().equals(request.getBookId())) {
+            return reservation;
+        }
+
+        Book replacement = getBook(request.getBookId());
+        if (!replacement.isAvailable()) {
+            throw new ApiException(HttpStatus.CONFLICT, "The selected book is not available.");
+        }
+        if (reservationRepository.existsByUserIdAndBookIdAndStatusIn(
+                reservation.getUserId(), replacement.getId(), ACTIVE_RESERVATION_STATUSES)) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "You already have an active hold on the selected book.");
+        }
+
+        Book currentBook = bookRepository.findById(reservation.getBookId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Current reserved book not found"));
+
+        replacement.setAvailableCopies(replacement.getAvailableCopies() - 1);
+        bookRepository.save(replacement);
+
+        reservation.setBookId(replacement.getId());
+        reservation.setTitle(replacement.getTitle());
+        reservation.setAuthor(replacement.getAuthor());
+        reservation.setCoverImageUrl(replacement.getCoverImageUrl());
+        reservation.setShelfCode(replacement.getShelfCode());
+        reservation.setShelfDetail(replacement.getShelfDetail());
+        reservation.setFormat(replacement.getFormat() == null ? "Print Copy" : replacement.getFormat());
+        reservation.setPickupDesk(blankTo(replacement.getPickupDesk(), "Central Circulation Desk"));
+        reservation.setPickupDeskDetail(blankTo(
+                replacement.getPickupDeskDetail(), "Level 1 • East Atrium Entrance"));
+        reservation.setHoldIdCode(generateHoldId(replacement));
+        Reservation updated = reservationRepository.save(reservation);
+
+        currentBook.setAvailableCopies(Math.min(
+                currentBook.getTotalCopies(), currentBook.getAvailableCopies() + 1));
+        bookRepository.save(currentBook);
+        return updated;
     }
 
     private void requireManageableReservation(Reservation reservation) {
@@ -225,7 +259,7 @@ public class BookReservationService {
         }
         if (!Instant.now().isBefore(deadline)) {
             throw new ApiException(HttpStatus.CONFLICT,
-                    "Reservations can only be changed or cancelled within 24 hours of being placed.");
+                    "Book holds can only be changed or cancelled within 24 hours of being placed.");
         }
     }
 
