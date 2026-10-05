@@ -82,11 +82,16 @@ class _BiblioneShellState extends State<BiblioneShell> {
         : currentUser?.id;
     final pages = [
       HomeScreen(
+        userProfile: currentUser,
+        authToken: widget.authController?.token,
         onFindSeat: () => setState(() => _index = 1),
         onExploreBooks: () => setState(() => _index = 2),
         onViewBookings: () => setState(() => _index = 3),
       ),
-      FindSeatScreen(onBack: () => setState(() => _index = 0)),
+      FindSeatScreen(
+        userId: bookingsUserId,
+        onBack: () => setState(() => _index = 0),
+      ),
       const SearchCatalogScreen(),
       MyBookingsScreen(userId: bookingsUserId),
       if (widget.authController != null)

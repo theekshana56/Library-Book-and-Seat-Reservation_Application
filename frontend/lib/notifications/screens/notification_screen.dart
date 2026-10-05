@@ -14,21 +14,26 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> {
   final NotificationController _controller = NotificationController();
+  bool _showUnreadOnly = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _controller.loadNotifications();
-    });
+    _controller.loadNotifications();
   }
 
-  void _showReminderModal([AppNotification? notification]) {
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _showReminderModal([AppNotification? notification]) async {
     final isEditing = notification != null;
     final titleController = TextEditingController(text: notification?.title ?? '');
     final messageController = TextEditingController(text: notification?.message ?? '');
 
-    showModalBottomSheet(
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
@@ -76,6 +81,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
               ElevatedButton(
                 onPressed: () async {
                   if (titleController.text.trim().isEmpty || messageController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Enter both a title and a message.'),
+                      ),
+                    );
                     return;
                   }
                   try {
@@ -120,6 +130,30 @@ class _NotificationScreenState extends State<NotificationScreen> {
         );
       },
     );
+    titleController.dispose();
+    messageController.dispose();
+  }
+
+  Future<void> _markAllAsRead() async {
+    try {
+      await _controller.markAllAsRead();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not mark notifications as read: $error')),
+      );
+    }
+  }
+
+  Future<void> _markAsRead(String id) async {
+    try {
+      await _controller.markAsRead(id);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not mark notification as read: $error')),
+      );
+    }
   }
 
   @override
@@ -144,8 +178,24 @@ class _NotificationScreenState extends State<NotificationScreen> {
               ),
               iconTheme: const IconThemeData(color: AppColors.navy),
               actions: [
+                ListenableBuilder(
+                  listenable: _controller,
+                  builder: (context, _) => _controller.unreadCount == 0
+                      ? const SizedBox.shrink()
+                      : IconButton(
+                          tooltip: 'Mark all as read',
+                          icon: const Icon(
+                            Icons.done_all_rounded,
+                            color: AppColors.emerald,
+                          ),
+                          onPressed: _markAllAsRead,
+                        ),
+                ),
                 IconButton(
-                  icon: const Icon(Icons.add_alert_rounded, color: AppColors.emerald),
+                  icon: const Icon(
+                    Icons.add_alert_rounded,
+                    color: AppColors.emerald,
+                  ),
                   onPressed: () => _showReminderModal(),
                 ),
               ],
@@ -165,6 +215,17 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       const Icon(Icons.error_outline, color: Colors.red, size: 48),
                       const SizedBox(height: 16),
                       Text('Failed to load notifications', style: GoogleFonts.plusJakartaSans()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          _controller.error!,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: AppColors.textMuted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
                       TextButton(
                         onPressed: _controller.loadNotifications,
                         child: const Text('Try Again'),
@@ -174,37 +235,109 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 );
               }
 
-              if (_controller.notifications.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.notifications_off_outlined, color: Colors.grey.shade400, size: 64),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No notifications yet',
+              final notifications = _controller.notifications
+                  .where(
+                    (notification) =>
+                        !_showUnreadOnly || !notification.isRead,
+                  )
+                  .toList();
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${_controller.unreadCount} unread',
+                            style: GoogleFonts.plusJakartaSans(
+                              color: AppColors.textMuted,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        FilterChip(
+                          label: const Text('All'),
+                          selected: !_showUnreadOnly,
+                          onSelected: (_) =>
+                              setState(() => _showUnreadOnly = false),
+                        ),
+                        const SizedBox(width: 8),
+                        FilterChip(
+                          label: const Text('Unread'),
+                          selected: _showUnreadOnly,
+                          onSelected: (_) =>
+                              setState(() => _showUnreadOnly = true),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_controller.error != null)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: Text(
+                        'Some changes could not be saved: ${_controller.error}',
                         style: GoogleFonts.plusJakartaSans(
-                          color: AppColors.textMuted,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          color: AppColors.warning,
+                          fontSize: 12,
                         ),
                       ),
-                    ],
+                    ),
+                  Expanded(
+                    child: notifications.isEmpty
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              SizedBox(
+                                height: 300,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        _showUnreadOnly
+                                            ? Icons.done_all_rounded
+                                            : Icons.notifications_off_outlined,
+                                        color: Colors.grey.shade400,
+                                        size: 64,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        _showUnreadOnly
+                                            ? 'You’re all caught up'
+                                            : 'No notifications yet',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          color: AppColors.textMuted,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : RefreshIndicator(
+                            color: AppColors.emerald,
+                            onRefresh: _controller.loadNotifications,
+                            child: ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              itemCount: notifications.length,
+                              itemBuilder: (context, index) {
+                                final notification = notifications[index];
+                                return _buildNotificationItem(
+                                  context,
+                                  notification,
+                                  _controller,
+                                );
+                              },
+                            ),
+                          ),
                   ),
-                );
-              }
-
-              return RefreshIndicator(
-                color: AppColors.emerald,
-                onRefresh: _controller.loadNotifications,
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  itemCount: _controller.notifications.length,
-                  itemBuilder: (context, index) {
-                    final notification = _controller.notifications[index];
-                    return _buildNotificationItem(context, notification, _controller);
-                  },
-                ),
+                ],
               );
             },
           ),
@@ -247,15 +380,22 @@ class _NotificationScreenState extends State<NotificationScreen> {
         child: const Icon(Icons.delete_outline, color: Colors.white),
       ),
       onDismissed: (_) {
-        controller.deleteNotification(notification.id);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Notification deleted')),
-        );
+        controller.deleteNotification(notification.id).then((_) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Notification deleted')),
+          );
+        }).catchError((Object error) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not delete notification: $error')),
+          );
+        });
       },
       child: GestureDetector(
-        onTap: () {
-          controller.markAsRead(notification.id);
-        },
+        onTap: notification.isRead
+            ? null
+            : () => _markAsRead(notification.id),
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           padding: const EdgeInsets.all(16),
