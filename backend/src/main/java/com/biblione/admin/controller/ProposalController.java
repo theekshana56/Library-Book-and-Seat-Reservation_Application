@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -38,6 +39,18 @@ public class ProposalController {
     public List<PublisherProposal> getVendorProposals(@PathVariable String vendorId) {
         AuthenticatedUser user = AuthContext.getCurrentUser();
         return proposalService.getVendorProposals(vendorId, user.id());
+    }
+
+    @PutMapping("/publisher/proposals/{id}")
+    public PublisherProposal updateVendorProposal(
+            @PathVariable String id,
+            @Valid @RequestBody CreateProposalRequest request) {
+        return proposalService.update(id, AuthContext.getCurrentUser().id(), request);
+    }
+
+    @DeleteMapping("/publisher/proposals/{id}")
+    public PublisherProposal withdrawVendorProposal(@PathVariable String id) {
+        return proposalService.withdraw(id, AuthContext.getCurrentUser().id());
     }
 
     @GetMapping("/admin/proposals")

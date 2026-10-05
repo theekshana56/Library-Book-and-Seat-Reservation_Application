@@ -19,6 +19,18 @@ directed to a staff workspace with separate **My tasks** and **To-dos** screens.
 Staff APIs identify the signed-in staff member on the server and only return or
 update tasks assigned to that account.
 
+## Administrative record lifecycle
+
+Admin workspaces support account updates and activation, staff task editing and
+cancellation, shelf and book catalog editing, and hall/seat editing. Records
+with operational history are archived or cancelled instead of physically
+deleted. A shelf with books or open tasks cannot be archived; a hall with
+active seats cannot be archived; seats with active bookings/holds cannot be
+archived; and books with active loans, reservations, waitlists, or shelving
+tasks cannot be archived. Archived books are hidden from public catalog search
+and reservation flows. Vendors may edit or withdraw their own proposals only
+while those proposals are pending admin review.
+
 ## Run the backend locally
 
 Backend MongoDB credentials are stored in `backend/.env`, which is ignored by

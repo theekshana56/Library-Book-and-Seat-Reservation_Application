@@ -39,6 +39,6 @@ public class StaffController {
 
     @GetMapping("/shelves")
     public List<Shelf> getShelves() {
-        return adminService.getShelves();
+        return adminService.getActiveShelves();
     }
 }
