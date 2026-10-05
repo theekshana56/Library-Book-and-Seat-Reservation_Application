@@ -22,6 +22,9 @@ public class AdminUser {
     @Id
     private String id;
 
+    @Indexed(unique = true, sparse = true)
+    private String universityId;
+
     @NotBlank
     private String fullName;
 
@@ -39,5 +42,6 @@ public class AdminUser {
 
     private String department;
     private String userCategory;
+    private String vendorCompanyName;
     private boolean active;
 }

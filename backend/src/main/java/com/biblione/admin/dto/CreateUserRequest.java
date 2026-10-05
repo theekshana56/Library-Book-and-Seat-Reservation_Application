@@ -12,6 +12,7 @@ public record CreateUserRequest(
         @NotBlank @Size(min = 10, max = 128) String password,
         @NotNull UserRole role,
         String department,
+        String vendorCompanyName,
         String userCategory,
         Boolean active) {
 }

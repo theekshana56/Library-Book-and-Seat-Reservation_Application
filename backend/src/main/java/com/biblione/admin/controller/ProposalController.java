@@ -4,10 +4,13 @@ import com.biblione.admin.dto.CreateProposalRequest;
 import com.biblione.admin.dto.ReviewProposalRequest;
 import com.biblione.admin.model.PublisherProposal;
 import com.biblione.admin.service.PublisherProposalService;
+import com.biblione.auth.security.AuthContext;
+import com.biblione.auth.security.AuthenticatedUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -28,12 +31,26 @@ public class ProposalController {
     @PostMapping("/publisher/proposals")
     @ResponseStatus(HttpStatus.CREATED)
     public PublisherProposal submit(@Valid @RequestBody CreateProposalRequest request) {
-        return proposalService.submit(request);
+        AuthenticatedUser user = AuthContext.getCurrentUser();
+        return proposalService.submit(user.id(), request);
     }
 
     @GetMapping("/publisher/proposals/vendor/{vendorId}")
     public List<PublisherProposal> getVendorProposals(@PathVariable String vendorId) {
-        return proposalService.getVendorProposals(vendorId);
+        AuthenticatedUser user = AuthContext.getCurrentUser();
+        return proposalService.getVendorProposals(vendorId, user.id());
+    }
+
+    @PutMapping("/publisher/proposals/{id}")
+    public PublisherProposal updateVendorProposal(
+            @PathVariable String id,
+            @Valid @RequestBody CreateProposalRequest request) {
+        return proposalService.update(id, AuthContext.getCurrentUser().id(), request);
+    }
+
+    @DeleteMapping("/publisher/proposals/{id}")
+    public PublisherProposal withdrawVendorProposal(@PathVariable String id) {
+        return proposalService.withdraw(id, AuthContext.getCurrentUser().id());
     }
 
     @GetMapping("/admin/proposals")

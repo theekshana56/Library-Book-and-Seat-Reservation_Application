@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
@@ -10,8 +10,9 @@ import 'ranked_results_screen.dart';
 
 class FindSeatScreen extends StatefulWidget {
   final VoidCallback? onBack;
+  final String? userId;
 
-  const FindSeatScreen({super.key, this.onBack});
+  const FindSeatScreen({super.key, this.onBack, this.userId});
 
   @override
   State<FindSeatScreen> createState() => _FindSeatScreenState();
@@ -112,7 +113,11 @@ class _FindSeatScreenState extends State<FindSeatScreen> {
       final response = await _api.recommend(request);
       if (!mounted) return;
       final screen = response.exactMatches.isNotEmpty
-          ? RankedResultsScreen(response: response, request: request)
+          ? RankedResultsScreen(
+              response: response,
+              request: request,
+              userId: widget.userId,
+            )
           : EmptyStateScreen(response: response, request: request);
       await Navigator.of(context)
           .push(MaterialPageRoute<void>(builder: (_) => screen));
@@ -257,8 +262,8 @@ class _FindSeatScreenState extends State<FindSeatScreen> {
                   const SizedBox(height: 10),
                   Text(
                     DateUtils.isSameDay(_date, DateTime.now())
-                        ? 'Today’s starts require at least 2 hours’ notice.'
-                        : 'Start times use the library’s local time.',
+                        ? "Today's starts require at least 2 hours' notice."
+                        : "Start times use the library's local time.",
                     style: _mutedStyle(10),
                   ),
                   const SizedBox(height: 9),

@@ -1,9 +1,8 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../debug_agent_log.dart';
 import '../api/api_client.dart';
 import '../models/book.dart';
 import '../theme/app_colors.dart';
@@ -26,6 +25,7 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
   Timer? _searchDebounce;
   int _searchRequestId = 0;
   List<String> _categories = const ['All Topics'];
+  bool _categoriesLoaded = false;
   String _category = 'All Topics';
   String _availabilityFilter = 'All';
   List<Book> _books = [];
@@ -36,39 +36,12 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
   void initState() {
     super.initState();
     _load();
-    _loadCategories();
-  }
-
-  Future<void> _loadCategories() async {
-    try {
-      final books = await _api.searchBooks();
-      final categories =
-          books
-              .map((book) => book.category.trim())
-              .where((category) => category.isNotEmpty)
-              .toSet()
-              .toList()
-            ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-      if (!mounted) return;
-      setState(() {
-        _categories = ['All Topics', ...categories];
-        if (!_categories.contains(_category)) _category = 'All Topics';
-      });
-    } catch (_) {}
   }
 
   @override
   void dispose() {
     _searchDebounce?.cancel();
     _controller.dispose();
-    // #region agent log
-    agentDebugLog(
-      location: 'search_catalog_screen.dart:dispose',
-      message: 'search catalog state disposing',
-      hypothesisId: 'D',
-      data: {'controllerDisposed': true},
-    );
-    // #endregion
     super.dispose();
   }
 
@@ -76,17 +49,28 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
     _searchDebounce?.cancel();
     _searchDebounce = null;
     final requestId = ++_searchRequestId;
+    final query = _controller.text;
+    final category = _category;
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final books = await _api.searchBooks(
-        query: _controller.text,
-        category: _category,
-      );
-      if (!mounted || requestId != _searchRequestId) return;
+      final books = await _api.searchBooks(query: query, category: category);
+      if (!mounted) return;
       setState(() {
+        if (!_categoriesLoaded && query.isEmpty && category == 'All Topics') {
+          final categories =
+              books
+                  .map((book) => book.category.trim())
+                  .where((value) => value.isNotEmpty)
+                  .toSet()
+                  .toList()
+                ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+          _categories = ['All Topics', ...categories];
+          _categoriesLoaded = true;
+        }
+        if (requestId != _searchRequestId) return;
         _books = books;
         _loading = false;
       });
@@ -106,6 +90,11 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
       if (_availabilityFilter == 'Checked out') return !book.isAvailable;
       return true;
     }).toList();
+    final showEmptyState = !_loading && _error == null && visibleBooks.isEmpty;
+    final statusItemCount =
+        (_loading ? 1 : 0) +
+        (_error == null ? 0 : 1) +
+        (showEmptyState ? 1 : 0);
 
     return Column(
       children: [
@@ -135,143 +124,166 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
           ),
         ),
         Expanded(
-          child: ListView(
+          child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            children: [
-              _searchBar(),
-              const SizedBox(height: 14),
-              SizedBox(
-                height: 38,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _categories.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 8),
-                  itemBuilder: (_, i) {
-                    final selected = _categories[i] == _category;
-                    return ChoiceChip(
-                      selected: selected,
-                      label: Text(_categories[i]),
-                      avatar: selected
-                          ? const Icon(
-                              Icons.check,
-                              size: 16,
-                              color: Colors.white,
-                            )
-                          : null,
-                      selectedColor: AppColors.tealChip,
-                      backgroundColor: Colors.white,
-                      labelStyle: GoogleFonts.plusJakartaSans(
-                        color: selected ? Colors.white : AppColors.textPrimary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
-                      side: BorderSide(
-                        color: selected
-                            ? AppColors.tealChip
-                            : const Color(0xFFD5DEE8),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(22),
-                      ),
-                      showCheckmark: false,
-                      onSelected: (_) {
-                        setState(() => _category = _categories[i]);
-                        _load();
-                      },
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Text(
-                          '${visibleBooks.length} RESULTS',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 12,
-                            color: AppColors.textMuted,
-                            letterSpacing: 0.6,
-                          ),
-                        ),
-                        Flexible(
-                          child: Text(
-                            ' in Main Science Library',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 12,
-                              color: AppColors.textMuted,
+            itemCount: 1 + statusItemCount + visibleBooks.length,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return Column(
+                  children: [
+                    _searchBar(),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      height: 38,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _categories.length,
+                        separatorBuilder: (_, _) => const SizedBox(width: 8),
+                        itemBuilder: (_, i) {
+                          final selected = _categories[i] == _category;
+                          return ChoiceChip(
+                            selected: selected,
+                            label: Text(_categories[i]),
+                            avatar: selected
+                                ? const Icon(
+                                    Icons.check,
+                                    size: 16,
+                                    color: Colors.white,
+                                  )
+                                : null,
+                            selectedColor: AppColors.tealChip,
+                            backgroundColor: Colors.white,
+                            labelStyle: GoogleFonts.plusJakartaSans(
+                              color: selected
+                                  ? Colors.white
+                                  : AppColors.textPrimary,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
                             ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                            side: BorderSide(
+                              color: selected
+                                  ? AppColors.tealChip
+                                  : const Color(0xFFD5DEE8),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22),
+                            ),
+                            showCheckmark: false,
+                            onSelected: (_) {
+                              setState(() => _category = _categories[i]);
+                              _load();
+                            },
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                  PopupMenuButton<String>(
-                    tooltip: 'Filter by availability',
-                    initialValue: _availabilityFilter,
-                    onSelected: (filter) =>
-                        setState(() => _availabilityFilter = filter),
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'All', child: Text('All books')),
-                      PopupMenuItem(
-                        value: 'Available',
-                        child: Text('Available now'),
-                      ),
-                      PopupMenuItem(
-                        value: 'Checked out',
-                        child: Text('Checked out'),
-                      ),
-                    ],
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                    const SizedBox(height: 16),
+                    Row(
                       children: [
-                        const Icon(
-                          Icons.tune_rounded,
-                          size: 18,
-                          color: AppColors.emerald,
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Text(
+                                '${visibleBooks.length} RESULTS',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 12,
+                                  color: AppColors.textMuted,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                              Flexible(
+                                child: Text(
+                                  ' in Main Science Library',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 12,
+                                    color: AppColors.textMuted,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Filters',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: AppColors.emerald,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
+                        PopupMenuButton<String>(
+                          tooltip: 'Filter by availability',
+                          initialValue: _availabilityFilter,
+                          onSelected: (filter) =>
+                              setState(() => _availabilityFilter = filter),
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(
+                              value: 'All',
+                              child: Text('All books'),
+                            ),
+                            PopupMenuItem(
+                              value: 'Available',
+                              child: Text('Available now'),
+                            ),
+                            PopupMenuItem(
+                              value: 'Checked out',
+                              child: Text('Checked out'),
+                            ),
+                          ],
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.tune_rounded,
+                                size: 18,
+                                color: AppColors.emerald,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Filters',
+                                style: GoogleFonts.plusJakartaSans(
+                                  color: AppColors.emerald,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              if (_loading)
-                const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    _error!,
-                    style: const TextStyle(
-                      color: Colors.redAccent,
-                      fontSize: 12,
+                    const SizedBox(height: 12),
+                  ],
+                );
+              }
+
+              var statusIndex = index - 1;
+              if (_loading) {
+                if (statusIndex == 0) {
+                  return const Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                statusIndex--;
+              }
+              if (_error != null) {
+                if (statusIndex == 0) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(
+                        color: Colors.redAccent,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                ),
-              if (!_loading && _error == null && visibleBooks.isEmpty)
-                const Padding(
+                  );
+                }
+                statusIndex--;
+              }
+              if (showEmptyState) {
+                return const Padding(
                   padding: EdgeInsets.symmetric(vertical: 28),
                   child: Center(child: Text('No books match these filters.')),
-                ),
-              ...visibleBooks.map(_bookCard),
-            ],
+                );
+              }
+              return _bookCard(visibleBooks[statusIndex]);
+            },
           ),
         ),
       ],

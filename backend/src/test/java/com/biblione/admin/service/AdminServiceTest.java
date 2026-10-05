@@ -1,6 +1,7 @@
 package com.biblione.admin.service;
 
 import com.biblione.admin.dto.UpdateTaskStatusRequest;
+import com.biblione.admin.dto.CreateBookRequest;
 import com.biblione.admin.dto.CreateTaskRequest;
 import com.biblione.admin.dto.CreateHallRequest;
 import com.biblione.admin.dto.CreateSeatRequest;
@@ -16,9 +17,15 @@ import com.biblione.admin.repository.PublisherProposalRepository;
 import com.biblione.admin.repository.ShelfRepository;
 import com.biblione.admin.repository.StaffTaskRepository;
 import com.biblione.exception.ApiException;
+import com.biblione.auth.security.AuthenticatedUser;
 import com.biblione.model.Book;
 import com.biblione.repository.BookRepository;
 import com.biblione.repository.SeatRepository;
+import com.biblione.repository.SeatBookingRepository;
+import com.biblione.repository.ReservationRepository;
+import com.biblione.repository.LoanRepository;
+import com.biblione.repository.WaitlistRepository;
+import com.biblione.repository.SeatHoldRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -37,6 +44,12 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AdminServiceTest {
+    private static final AuthenticatedUser ADMIN = new AuthenticatedUser(
+            "admin-1", null, "Admin", "admin@biblione.edu",
+            UserRole.ADMIN, "Library", "ADMIN", null, true, null);
+    private static final AuthenticatedUser STAFF = new AuthenticatedUser(
+            "staff-1", null, "Staff", "staff@biblione.edu",
+            UserRole.LIBRARY_STAFF, "Library", "STAFF", null, true, null);
 
     @Mock
     private AdminUserRepository userRepository;
@@ -52,6 +65,16 @@ class AdminServiceTest {
         private SeatRepository seatRepository;
         @Mock
         private HallRepository hallRepository;
+        @Mock
+        private SeatBookingRepository seatBookingRepository;
+        @Mock
+        private ReservationRepository reservationRepository;
+        @Mock
+        private LoanRepository loanRepository;
+        @Mock
+        private WaitlistRepository waitlistRepository;
+        @Mock
+        private SeatHoldRepository seatHoldRepository;
     @Mock
     private PasswordEncoder passwordEncoder;
 
@@ -77,7 +100,8 @@ class AdminServiceTest {
         when(shelfRepository.save(any(Shelf.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(taskRepository.save(any(StaffTask.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        StaffTask completed = service.updateTaskStatus("task-1", new UpdateTaskStatusRequest(TaskStatus.COMPLETED, null));
+        StaffTask completed = service.updateTaskStatus(
+                "task-1", new UpdateTaskStatusRequest(TaskStatus.COMPLETED, null), ADMIN);
 
         assertThat(completed.getStatus()).isEqualTo(TaskStatus.COMPLETED);
         assertThat(book.getAvailableCopies()).isEqualTo(3);
@@ -97,7 +121,8 @@ class AdminServiceTest {
         when(shelfRepository.findByShelfCodeIgnoreCase("CS-204")).thenReturn(Optional.of(shelf));
         when(bookRepository.findById("book-1")).thenReturn(Optional.of(book));
 
-        assertThatThrownBy(() -> service.updateTaskStatus("task-1", new UpdateTaskStatusRequest(TaskStatus.COMPLETED, null)))
+        assertThatThrownBy(() -> service.updateTaskStatus(
+                "task-1", new UpdateTaskStatusRequest(TaskStatus.COMPLETED, null), ADMIN))
                 .isInstanceOf(ApiException.class);
         assertThat(book.getAvailableCopies()).isZero();
     }
@@ -114,6 +139,23 @@ class AdminServiceTest {
         assertThatThrownBy(() -> service.createTask(new CreateTaskRequest(
                 "staff-1", "book-1", book.getTitle(), "Shelve books", "CS-301", 10)))
                 .isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void staffCannotUpdateAnotherStaffMembersTask() {
+        StaffTask task = StaffTask.builder()
+                .id("task-1")
+                .assignedStaffId("staff-2")
+                .status(TaskStatus.PENDING)
+                .build();
+        when(taskRepository.findById("task-1")).thenReturn(Optional.of(task));
+
+        assertThatThrownBy(() -> service.updateTaskStatus(
+                "task-1",
+                new UpdateTaskStatusRequest(TaskStatus.IN_PROGRESS, null),
+                STAFF))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("only update your own");
         verify(taskRepository, never()).save(any(StaffTask.class));
     }
 
@@ -173,4 +215,66 @@ class AdminServiceTest {
                                 "A05", "MISSING", "Level 2", "Quiet Zone", false, 30, java.util.List.of())))
                                 .isInstanceOf(ApiException.class);
         }
+
+    @Test
+    void adminCancellationRetainsTaskAndMarksItCancelled() {
+        StaffTask task = StaffTask.builder().id("task-1").status(TaskStatus.IN_PROGRESS).build();
+        when(taskRepository.findById("task-1")).thenReturn(Optional.of(task));
+        when(taskRepository.save(any(StaffTask.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        StaffTask cancelled = service.cancelTask("task-1");
+
+        assertThat(cancelled.getStatus()).isEqualTo(TaskStatus.CANCELLED);
+        verify(taskRepository).save(task);
+    }
+
+    @Test
+    void createBookUpdatesShelfCountAndPublishesAvailableInventory() {
+        Shelf shelf = Shelf.builder().id("shelf-1").shelfCode("CS-204")
+                .level("Level 2").zone("East").currentBookCount(4).maxCapacity(10).active(true).build();
+        when(shelfRepository.findByShelfCodeIgnoreCase("CS-204")).thenReturn(Optional.of(shelf));
+        when(bookRepository.save(any(Book.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(shelfRepository.save(any(Shelf.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        CreateBookRequest request = new CreateBookRequest(
+                "Library Systems", "A. Author", "Example Press", "2nd", 2025,
+                "Computer Science", "CS-12", "Print", "CS-204",
+                14, 3, null, "Description", "9781234567890");
+
+        Book book = service.createBook(request);
+
+        assertThat(book.getInventoryStatus()).isEqualTo("AVAILABLE");
+        assertThat(book.getAvailableCopies()).isEqualTo(3);
+        assertThat(book.getActive()).isTrue();
+        assertThat(shelf.getCurrentBookCount()).isEqualTo(7);
+    }
+
+    @Test
+    void shelfCannotBeArchivedWhileAnActiveBookReferencesIt() {
+        Shelf shelf = Shelf.builder().id("shelf-1").shelfCode("CS-204").build();
+        Book book = Book.builder().id("book-1").active(true).build();
+        when(shelfRepository.findById("shelf-1")).thenReturn(Optional.of(shelf));
+        when(bookRepository.findByShelfCode("CS-204")).thenReturn(java.util.List.of(book));
+
+        assertThatThrownBy(() -> service.archiveShelf("shelf-1"))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("Move books");
+        verify(shelfRepository, never()).save(any(Shelf.class));
+    }
+
+    @Test
+    void bookWithActiveLoanCannotBeArchived() {
+        Book book = Book.builder().id("book-1").totalCopies(1).availableCopies(0).build();
+        when(bookRepository.findById("book-1")).thenReturn(Optional.of(book));
+        when(reservationRepository.countByBookIdAndStatusIn("book-1", java.util.List.of("READY_FOR_PICKUP", "CONFIRMED")))
+                .thenReturn(0L);
+        when(loanRepository.countByBookIdAndStatus("book-1", "ACTIVE")).thenReturn(1L);
+        when(waitlistRepository.countByBookIdAndStatus("book-1", "WAITING")).thenReturn(0L);
+        when(taskRepository.existsByBookIdAndStatusNotIn(
+                "book-1", java.util.List.of(TaskStatus.COMPLETED, TaskStatus.CANCELLED))).thenReturn(false);
+
+        assertThatThrownBy(() -> service.archiveBook("book-1"))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("active reservations");
+        verify(bookRepository, never()).save(any(Book.class));
+    }
 }

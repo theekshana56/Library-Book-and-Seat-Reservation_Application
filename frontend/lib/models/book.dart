@@ -1,4 +1,4 @@
-class Book {
+﻿class Book {
   final String id;
   final String title;
   final String author;
@@ -21,9 +21,11 @@ class Book {
   final DateTime? nextReturnDate;
   final String? currentBorrower;
   final String coverImageUrl;
+  final String? isbn;
   final String? description;
   final String? catalogNotice;
   final int? expressHoldHours;
+  final bool active;
 
   const Book({
     required this.id,
@@ -48,9 +50,11 @@ class Book {
     this.nextReturnDate,
     this.currentBorrower,
     required this.coverImageUrl,
+    this.isbn,
     this.description,
     this.catalogNotice,
     this.expressHoldHours,
+    this.active = true,
   });
 
   bool get isAvailable =>
@@ -113,9 +117,11 @@ class Book {
           : null,
       currentBorrower: json['currentBorrower'],
       coverImageUrl: json['coverImageUrl'] ?? '',
+      isbn: json['isbn']?.toString(),
       description: json['description']?.toString(),
       catalogNotice: json['catalogNotice'],
       expressHoldHours: json['expressHoldHours'],
+      active: json['active'] != false,
     );
   }
 }

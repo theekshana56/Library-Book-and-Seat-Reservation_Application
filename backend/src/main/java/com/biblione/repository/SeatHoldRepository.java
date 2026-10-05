@@ -10,4 +10,5 @@ public interface SeatHoldRepository extends MongoRepository<SeatHold, String> {
     List<SeatHold> findByUserIdAndStatus(String userId, String status);
 
     List<SeatHold> findByStatusIn(List<String> statuses);
+    boolean existsBySeatCodeIgnoreCase(String seatCode);
 }

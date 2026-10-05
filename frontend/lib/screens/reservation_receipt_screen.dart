@@ -1,4 +1,4 @@
-import 'package:barcode_widget/barcode_widget.dart';
+﻿import 'package:barcode_widget/barcode_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -132,7 +132,7 @@ class ReservationReceiptScreen extends StatelessWidget {
                             _kv('Title', titleTail),
                             _kv('Author', reservation.author),
                             _kv('Shelf Code', reservation.shelfCode, chip: true),
-                            _kv('Hold Window', '●  24 Hours Remaining', mint: true),
+                            _kv('Hold Window', '24 Hours Remaining', mint: true),
                           ],
                         ),
                       ),

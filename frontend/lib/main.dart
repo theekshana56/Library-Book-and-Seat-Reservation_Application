@@ -1,9 +1,7 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'admin/screens/admin_dashboard_screen.dart';
-import 'debug_agent_log.dart';
 import 'screens/home_screen.dart';
 import 'seat_recommender/screens/find_seat_screen.dart';
 import 'screens/my_bookings_screen.dart';
@@ -11,37 +9,20 @@ import 'screens/search_catalog_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/app_colors.dart';
 import 'widgets/ui_kit.dart';
+import 'user_management/controllers/auth_controller.dart';
+import 'user_management/screens/profile_screen.dart';
+import 'user_management/widgets/auth_gate.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // #region agent log
-  FlutterError.onError = (details) {
-    agentDebugLog(
-      location: 'main.dart:FlutterError',
-      message: details.exceptionAsString(),
-      hypothesisId: 'A-E',
-      data: {
-        'library': details.library,
-        'stack': details.stack?.toString().split('\n').take(12).join(' | '),
-      },
-    );
-    FlutterError.presentError(details);
-  };
-  PlatformDispatcher.instance.onError = (error, stack) {
-    agentDebugLog(
-      location: 'main.dart:platformError',
-      message: error.toString(),
-      hypothesisId: 'A-E',
-      data: {'stack': stack.toString().split('\n').take(12).join(' | ')},
-    );
-    return false;
-  };
-  // #endregion
   runApp(const BiblioneApp());
 }
 
 class BiblioneApp extends StatelessWidget {
-  const BiblioneApp({super.key});
+  final AuthController? authController;
+  final Widget? home;
+
+  const BiblioneApp({super.key, this.authController, this.home});
 
   @override
   Widget build(BuildContext context) {
@@ -49,13 +30,15 @@ class BiblioneApp extends StatelessWidget {
       title: 'Biblione',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: const BiblioneShell(),
+      home: home ?? AuthGate(authController: authController),
     );
   }
 }
 
 class BiblioneShell extends StatefulWidget {
-  const BiblioneShell({super.key});
+  final AuthController? authController;
+
+  const BiblioneShell({super.key, this.authController});
 
   @override
   State<BiblioneShell> createState() => _BiblioneShellState();
@@ -63,26 +46,51 @@ class BiblioneShell extends StatefulWidget {
 
 class _BiblioneShellState extends State<BiblioneShell> {
   int _index = 0;
+  final Set<int> _visitedIndexes = {0};
+
+  void _selectTab(int index) {
+    if (index == _index && _visitedIndexes.contains(index)) return;
+    setState(() {
+      _index = index;
+      _visitedIndexes.add(index);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      HomeScreen(
-        onFindSeat: () => setState(() => _index = 1),
-        onExploreBooks: () => setState(() => _index = 2),
-        onViewBookings: () => setState(() => _index = 3),
-      ),
-      FindSeatScreen(onBack: () => setState(() => _index = 0)),
-      const SearchCatalogScreen(),
-      const MyBookingsScreen(),
-      _ProfilePage(
-        title: 'Profile',
-        subtitle: 'RW • CS Dept • Card 2024-9182',
-        onAdmin: () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => const AdminDashboardScreen())),
-      ),
-    ];
+    final currentUser = widget.authController?.currentUser;
+    final universityId = currentUser?.universityId;
+    final bookingsUserId =
+        universityId != null && universityId.trim().isNotEmpty
+        ? universityId.trim()
+        : currentUser?.id;
+    final pages = List<Widget>.generate(5, (index) {
+      if (!_visitedIndexes.contains(index)) return const SizedBox.shrink();
+      return switch (index) {
+        0 => HomeScreen(
+          userProfile: currentUser,
+          authToken: widget.authController?.token,
+          onFindSeat: () => _selectTab(1),
+          onExploreBooks: () => _selectTab(2),
+          onViewBookings: () => _selectTab(3),
+        ),
+        1 => FindSeatScreen(
+          userId: bookingsUserId,
+          onBack: () => _selectTab(0),
+        ),
+        2 => const SearchCatalogScreen(),
+        3 => MyBookingsScreen(userId: bookingsUserId),
+        4 when widget.authController != null =>
+          ProfileScreen(authController: widget.authController!),
+        _ => _PlaceholderPage(
+          title: 'Profile',
+          subtitle: 'RW • CS Dept • Card 2024-9182',
+          onAdmin: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+          ),
+        ),
+      };
+    });
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: Center(
@@ -92,10 +100,12 @@ class _BiblioneShellState extends State<BiblioneShell> {
             color: AppColors.pageBg,
             child: Column(
               children: [
-                Expanded(child: pages[_index]),
+                Expanded(
+                  child: IndexedStack(index: _index, children: pages),
+                ),
                 BiblioneBottomNav(
                   index: _index,
-                  onTap: (i) => setState(() => _index = i),
+                  onTap: _selectTab,
                 ),
               ],
             ),
@@ -103,6 +113,23 @@ class _BiblioneShellState extends State<BiblioneShell> {
         ),
       ),
     );
+  }
+}
+
+class _PlaceholderPage extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final VoidCallback? onAdmin;
+
+  const _PlaceholderPage({
+    required this.title,
+    required this.subtitle,
+    this.onAdmin,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _ProfilePage(title: title, subtitle: subtitle, onAdmin: onAdmin);
   }
 }
 

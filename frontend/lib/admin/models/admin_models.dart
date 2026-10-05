@@ -1,10 +1,11 @@
-class AdminUser {
+﻿class AdminUser {
   final String id;
   final String fullName;
   final String email;
   final String role;
   final String department;
   final String userCategory;
+  final String vendorCompanyName;
   final bool active;
 
   const AdminUser({
@@ -14,6 +15,7 @@ class AdminUser {
     required this.role,
     required this.department,
     required this.userCategory,
+    this.vendorCompanyName = '',
     required this.active,
   });
 
@@ -24,6 +26,7 @@ class AdminUser {
     role: json['role']?.toString() ?? 'STUDENT',
     department: json['department']?.toString() ?? '',
     userCategory: json['userCategory']?.toString() ?? '',
+    vendorCompanyName: json['vendorCompanyName']?.toString() ?? '',
     active: json['active'] == true,
   );
 }
@@ -124,6 +127,7 @@ class LibraryShelf {
   final String zone;
   final int maxCapacity;
   final int currentBookCount;
+  final bool active;
 
   const LibraryShelf({
     required this.id,
@@ -132,6 +136,7 @@ class LibraryShelf {
     required this.zone,
     required this.maxCapacity,
     required this.currentBookCount,
+    this.active = true,
   });
 
   factory LibraryShelf.fromJson(Map<String, dynamic> json) => LibraryShelf(
@@ -141,6 +146,7 @@ class LibraryShelf {
     zone: json['zone']?.toString() ?? '',
     maxCapacity: (json['maxCapacity'] as num?)?.toInt() ?? 0,
     currentBookCount: (json['currentBookCount'] as num?)?.toInt() ?? 0,
+    active: json['active'] != false,
   );
 }
 
@@ -151,6 +157,7 @@ class LibraryHall {
   final String building;
   final int floorCount;
   final String description;
+  final bool active;
 
   const LibraryHall({
     required this.id,
@@ -159,6 +166,7 @@ class LibraryHall {
     required this.building,
     required this.floorCount,
     required this.description,
+    this.active = true,
   });
 
   factory LibraryHall.fromJson(Map<String, dynamic> json) => LibraryHall(
@@ -168,6 +176,7 @@ class LibraryHall {
     building: json['building']?.toString() ?? '',
     floorCount: (json['floorCount'] as num?)?.toInt() ?? 1,
     description: json['description']?.toString() ?? '',
+    active: json['active'] != false,
   );
 }
 
@@ -180,6 +189,7 @@ class LibrarySeat {
   final bool hasPowerOutlet;
   final int acousticsDb;
   final List<String> features;
+  final bool active;
 
   const LibrarySeat({
     required this.id,
@@ -190,6 +200,7 @@ class LibrarySeat {
     required this.hasPowerOutlet,
     required this.acousticsDb,
     required this.features,
+    this.active = true,
   });
 
   factory LibrarySeat.fromJson(Map<String, dynamic> json) => LibrarySeat(
@@ -203,6 +214,7 @@ class LibrarySeat {
     features: (json['features'] as List<dynamic>? ?? const [])
         .map((feature) => feature.toString())
         .toList(),
+    active: json['active'] != false,
   );
 }
 
