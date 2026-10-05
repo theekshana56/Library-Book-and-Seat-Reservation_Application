@@ -1,9 +1,7 @@
-﻿import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'admin/screens/admin_dashboard_screen.dart';
-import 'debug_agent_log.dart';
 import 'screens/home_screen.dart';
 import 'seat_recommender/screens/find_seat_screen.dart';
 import 'screens/my_bookings_screen.dart';
@@ -17,29 +15,6 @@ import 'user_management/widgets/auth_gate.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // #region agent log
-  FlutterError.onError = (details) {
-    agentDebugLog(
-      location: 'main.dart:FlutterError',
-      message: details.exceptionAsString(),
-      hypothesisId: 'A-E',
-      data: {
-        'library': details.library,
-        'stack': details.stack?.toString().split('\n').take(12).join(' | '),
-      },
-    );
-    FlutterError.presentError(details);
-  };
-  PlatformDispatcher.instance.onError = (error, stack) {
-    agentDebugLog(
-      location: 'main.dart:platformError',
-      message: error.toString(),
-      hypothesisId: 'A-E',
-      data: {'stack': stack.toString().split('\n').take(12).join(' | ')},
-    );
-    return false;
-  };
-  // #endregion
   runApp(const BiblioneApp());
 }
 
@@ -71,6 +46,15 @@ class BiblioneShell extends StatefulWidget {
 
 class _BiblioneShellState extends State<BiblioneShell> {
   int _index = 0;
+  final Set<int> _visitedIndexes = {0};
+
+  void _selectTab(int index) {
+    if (index == _index && _visitedIndexes.contains(index)) return;
+    setState(() {
+      _index = index;
+      _visitedIndexes.add(index);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,38 +64,33 @@ class _BiblioneShellState extends State<BiblioneShell> {
         universityId != null && universityId.trim().isNotEmpty
         ? universityId.trim()
         : currentUser?.id;
-    final pages = [
-      HomeScreen(
-        userProfile: currentUser,
-        authToken: widget.authController?.token,
-        onFindSeat: () => setState(() => _index = 1),
-        onExploreBooks: () => setState(() => _index = 2),
-        onViewBookings: () => setState(() => _index = 3),
-      ),
-      FindSeatScreen(
-        userId: bookingsUserId,
-        onBack: () => setState(() => _index = 0),
-      ),
-      const SearchCatalogScreen(),
-      MyBookingsScreen(userId: bookingsUserId),
-      if (widget.authController != null)
-        ProfileScreen(authController: widget.authController!)
-      else
-        _PlaceholderPage(
+    final pages = List<Widget>.generate(5, (index) {
+      if (!_visitedIndexes.contains(index)) return const SizedBox.shrink();
+      return switch (index) {
+        0 => HomeScreen(
+          userProfile: currentUser,
+          authToken: widget.authController?.token,
+          onFindSeat: () => _selectTab(1),
+          onExploreBooks: () => _selectTab(2),
+          onViewBookings: () => _selectTab(3),
+        ),
+        1 => FindSeatScreen(
+          userId: bookingsUserId,
+          onBack: () => _selectTab(0),
+        ),
+        2 => const SearchCatalogScreen(),
+        3 => MyBookingsScreen(userId: bookingsUserId),
+        4 when widget.authController != null =>
+          ProfileScreen(authController: widget.authController!),
+        _ => _PlaceholderPage(
           title: 'Profile',
           subtitle: 'RW • CS Dept • Card 2024-9182',
           onAdmin: () => Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
           ),
         ),
-      _ProfilePage(
-        title: 'Profile',
-        subtitle: 'RW • CS Dept • Card 2024-9182',
-        onAdmin: () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => const AdminDashboardScreen())),
-      ),
-    ];
+      };
+    });
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: Center(
@@ -121,10 +100,12 @@ class _BiblioneShellState extends State<BiblioneShell> {
             color: AppColors.pageBg,
             child: Column(
               children: [
-                Expanded(child: pages[_index]),
+                Expanded(
+                  child: IndexedStack(index: _index, children: pages),
+                ),
                 BiblioneBottomNav(
                   index: _index,
-                  onTap: (i) => setState(() => _index = i),
+                  onTap: _selectTab,
                 ),
               ],
             ),
