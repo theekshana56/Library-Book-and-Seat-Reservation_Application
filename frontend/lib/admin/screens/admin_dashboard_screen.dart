@@ -5,6 +5,7 @@ import '../controllers/admin_api_client.dart';
 import '../models/admin_models.dart';
 import '../widgets/admin_widgets.dart';
 import 'admin_proposal_review_screen.dart';
+import 'book_catalog_management_screen.dart';
 import 'shelf_management_screen.dart';
 import 'space_management_screen.dart';
 import 'staff_task_assignment_screen.dart';
@@ -219,6 +220,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         'Organize capacity and zones',
         Icons.shelves,
         const ShelfManagementScreen(),
+      ),
+      _WorkspaceItem(
+        'Book catalog',
+        'Create, update and archive titles',
+        Icons.menu_book_outlined,
+        const BookCatalogManagementScreen(),
       ),
       _WorkspaceItem(
         'Seats & halls',

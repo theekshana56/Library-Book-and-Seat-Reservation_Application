@@ -30,10 +30,11 @@ class AdminApiClient {
       'active': ?active?.toString(),
     };
     return (await _list(
-      await _http.get(_uri('/api/v1/admin/users', query), headers: await _headers),
-    ))
-        .map(AdminUser.fromJson)
-        .toList();
+      await _http.get(
+        _uri('/api/v1/admin/users', query),
+        headers: await _headers,
+      ),
+    )).map(AdminUser.fromJson).toList();
   }
 
   Future<AdminUser> createUser(Map<String, dynamic> payload) async =>
@@ -47,6 +48,12 @@ class AdminApiClient {
         ),
       );
 
+  Future<AdminUser> getUser(String id) async => AdminUser.fromJson(
+    await _map(
+      await _http.get(_uri('/api/v1/admin/users/$id'), headers: await _headers),
+    ),
+  );
+
   Future<AdminUser> setUserActive(String id, bool active) async =>
       AdminUser.fromJson(
         await _map(
@@ -58,12 +65,20 @@ class AdminApiClient {
         ),
       );
 
-  Future<List<PublisherProposal>> getProposals() async =>
-      (await _list(
-        await _http.get(_uri('/api/v1/admin/proposals'), headers: await _headers),
-      ))
-          .map(PublisherProposal.fromJson)
-          .toList();
+  Future<AdminUser> updateUser(String id, Map<String, dynamic> payload) async =>
+      AdminUser.fromJson(
+        await _map(
+          await _http.put(
+            _uri('/api/v1/admin/users/$id'),
+            headers: await _headers,
+            body: jsonEncode(payload),
+          ),
+        ),
+      );
+
+  Future<List<PublisherProposal>> getProposals() async => (await _list(
+    await _http.get(_uri('/api/v1/admin/proposals'), headers: await _headers),
+  )).map(PublisherProposal.fromJson).toList();
 
   Future<List<PublisherProposal>> getVendorProposals(String vendorId) async =>
       (await _list(
@@ -85,6 +100,28 @@ class AdminApiClient {
     ),
   );
 
+  Future<PublisherProposal> updateProposal(
+    String id,
+    Map<String, dynamic> payload,
+  ) async => PublisherProposal.fromJson(
+    await _map(
+      await _http.put(
+        _uri('/api/v1/publisher/proposals/$id'),
+        headers: await _headers,
+        body: jsonEncode(payload),
+      ),
+    ),
+  );
+
+  Future<void> withdrawProposal(String id) async {
+    _ensureOk(
+      await _http.delete(
+        _uri('/api/v1/publisher/proposals/$id'),
+        headers: await _headers,
+      ),
+    );
+  }
+
   Future<PublisherProposal> reviewProposal(
     String id, {
     required bool approved,
@@ -104,25 +141,16 @@ class AdminApiClient {
     ),
   );
 
-  Future<List<StaffTask>> getStaffTasks(String staffId) async =>
-      (await _list(
-        await _http.get(
-          _uri('/api/v1/admin/tasks/staff/$staffId'),
-          headers: await _headers,
-        ),
-      ))
-          .map(StaffTask.fromJson)
-          .toList();
+  Future<List<StaffTask>> getStaffTasks(String staffId) async => (await _list(
+    await _http.get(
+      _uri('/api/v1/admin/tasks/staff/$staffId'),
+      headers: await _headers,
+    ),
+  )).map(StaffTask.fromJson).toList();
 
-  Future<List<StaffTask>> getMyStaffTasks() async =>
-      (await _list(
-        await _http.get(
-          _uri('/api/v1/staff/tasks'),
-          headers: await _headers,
-        ),
-      ))
-          .map(StaffTask.fromJson)
-          .toList();
+  Future<List<StaffTask>> getMyStaffTasks() async => (await _list(
+    await _http.get(_uri('/api/v1/staff/tasks'), headers: await _headers),
+  )).map(StaffTask.fromJson).toList();
 
   Future<StaffTask> updateMyTask(
     String id,
@@ -138,15 +166,9 @@ class AdminApiClient {
     ),
   );
 
-  Future<List<LibraryShelf>> getStaffShelves() async =>
-      (await _list(
-        await _http.get(
-          _uri('/api/v1/staff/shelves'),
-          headers: await _headers,
-        ),
-      ))
-          .map(LibraryShelf.fromJson)
-          .toList();
+  Future<List<LibraryShelf>> getStaffShelves() async => (await _list(
+    await _http.get(_uri('/api/v1/staff/shelves'), headers: await _headers),
+  )).map(LibraryShelf.fromJson).toList();
 
   Future<StaffTask> assignTask(Map<String, dynamic> payload) async =>
       StaffTask.fromJson(
@@ -173,12 +195,36 @@ class AdminApiClient {
     ),
   );
 
-  Future<List<LibraryShelf>> getShelves() async =>
-      (await _list(
-        await _http.get(_uri('/api/v1/admin/shelves'), headers: await _headers),
-      ))
-          .map(LibraryShelf.fromJson)
-          .toList();
+  Future<StaffTask> editTask(String id, Map<String, dynamic> payload) async =>
+      StaffTask.fromJson(
+        await _map(
+          await _http.put(
+            _uri('/api/v1/admin/tasks/$id'),
+            headers: await _headers,
+            body: jsonEncode(payload),
+          ),
+        ),
+      );
+
+  Future<StaffTask> cancelTask(String id) async => StaffTask.fromJson(
+    await _map(
+      await _http.delete(
+        _uri('/api/v1/admin/tasks/$id'),
+        headers: await _headers,
+      ),
+    ),
+  );
+
+  Future<List<LibraryShelf>> getShelves() async => (await _list(
+    await _http.get(_uri('/api/v1/admin/shelves'), headers: await _headers),
+  )).map(LibraryShelf.fromJson).toList();
+
+  Future<List<LibraryShelf>> getActiveShelves() async => (await _list(
+    await _http.get(
+      _uri('/api/v1/admin/shelves/active'),
+      headers: await _headers,
+    ),
+  )).map(LibraryShelf.fromJson).toList();
 
   Future<LibraryShelf> saveShelf(
     Map<String, dynamic> payload, {
@@ -198,12 +244,18 @@ class AdminApiClient {
     return LibraryShelf.fromJson(await _map(response));
   }
 
-  Future<List<LibraryHall>> getHalls() async =>
-      (await _list(
-        await _http.get(_uri('/api/v1/admin/halls'), headers: await _headers),
-      ))
-          .map(LibraryHall.fromJson)
-          .toList();
+  Future<LibraryShelf> archiveShelf(String id) async => LibraryShelf.fromJson(
+    await _map(
+      await _http.delete(
+        _uri('/api/v1/admin/shelves/$id'),
+        headers: await _headers,
+      ),
+    ),
+  );
+
+  Future<List<LibraryHall>> getHalls() async => (await _list(
+    await _http.get(_uri('/api/v1/admin/halls'), headers: await _headers),
+  )).map(LibraryHall.fromJson).toList();
 
   Future<LibraryHall> createHall(Map<String, dynamic> payload) async =>
       LibraryHall.fromJson(
@@ -216,12 +268,33 @@ class AdminApiClient {
         ),
       );
 
-  Future<List<LibrarySeat>> getSeats() async =>
-      (await _list(
-        await _http.get(_uri('/api/v1/admin/seats'), headers: await _headers),
-      ))
-          .map(LibrarySeat.fromJson)
-          .toList();
+  Future<LibraryHall> saveHall(String? id, Map<String, dynamic> payload) async {
+    final response = id == null
+        ? await _http.post(
+            _uri('/api/v1/admin/halls'),
+            headers: await _headers,
+            body: jsonEncode(payload),
+          )
+        : await _http.put(
+            _uri('/api/v1/admin/halls/$id'),
+            headers: await _headers,
+            body: jsonEncode(payload),
+          );
+    return LibraryHall.fromJson(await _map(response));
+  }
+
+  Future<LibraryHall> archiveHall(String id) async => LibraryHall.fromJson(
+    await _map(
+      await _http.delete(
+        _uri('/api/v1/admin/halls/$id'),
+        headers: await _headers,
+      ),
+    ),
+  );
+
+  Future<List<LibrarySeat>> getSeats() async => (await _list(
+    await _http.get(_uri('/api/v1/admin/seats'), headers: await _headers),
+  )).map(LibrarySeat.fromJson).toList();
 
   Future<LibrarySeat> createSeat(Map<String, dynamic> payload) async =>
       LibrarySeat.fromJson(
@@ -233,6 +306,64 @@ class AdminApiClient {
           ),
         ),
       );
+
+  Future<LibrarySeat> saveSeat(String? id, Map<String, dynamic> payload) async {
+    final response = id == null
+        ? await _http.post(
+            _uri('/api/v1/admin/seats'),
+            headers: await _headers,
+            body: jsonEncode(payload),
+          )
+        : await _http.put(
+            _uri('/api/v1/admin/seats/$id'),
+            headers: await _headers,
+            body: jsonEncode(payload),
+          );
+    return LibrarySeat.fromJson(await _map(response));
+  }
+
+  Future<LibrarySeat> archiveSeat(String id) async => LibrarySeat.fromJson(
+    await _map(
+      await _http.delete(
+        _uri('/api/v1/admin/seats/$id'),
+        headers: await _headers,
+      ),
+    ),
+  );
+
+  Future<List<Book>> getBooks() async => (await _list(
+    await _http.get(_uri('/api/v1/admin/books'), headers: await _headers),
+  )).map(Book.fromJson).toList();
+
+  Future<Book> getBook(String id) async => Book.fromJson(
+    await _map(
+      await _http.get(_uri('/api/v1/admin/books/$id'), headers: await _headers),
+    ),
+  );
+
+  Future<Book> saveBook(Map<String, dynamic> payload, {String? id}) async {
+    final response = id == null
+        ? await _http.post(
+            _uri('/api/v1/admin/books'),
+            headers: await _headers,
+            body: jsonEncode(payload),
+          )
+        : await _http.put(
+            _uri('/api/v1/admin/books/$id'),
+            headers: await _headers,
+            body: jsonEncode(payload),
+          );
+    return Book.fromJson(await _map(response));
+  }
+
+  Future<Book> archiveBook(String id) async => Book.fromJson(
+    await _map(
+      await _http.delete(
+        _uri('/api/v1/admin/books/$id'),
+        headers: await _headers,
+      ),
+    ),
+  );
 
   Future<List<Book>> getPendingShelvingBooks() async => (await _list(
     await _http.get(

@@ -104,4 +104,25 @@ class PublisherProposalServiceTest {
         assertThatThrownBy(() -> service.review("proposal-1", new ReviewProposalRequest(true, 5, "")))
                 .isInstanceOf(ApiException.class);
     }
+
+    @Test
+    void vendorCanEditAndWithdrawOnlyTheirPendingProposal() {
+        PublisherProposal proposal = PublisherProposal.builder()
+                .id("proposal-1")
+                .vendorId("vendor-1")
+                .status(ProposalStatus.PENDING_ADMIN_REVIEW)
+                .build();
+        when(proposalRepository.findById("proposal-1")).thenReturn(Optional.of(proposal));
+        when(proposalRepository.save(any(PublisherProposal.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        var updated = service.update("proposal-1", "vendor-1", new CreateProposalRequest(
+                "Updated title", "New author", "isbn", "Technology",
+                "New description", 10, 8, null));
+
+        assertThat(updated.getBookTitle()).isEqualTo("Updated title");
+        assertThat(updated.getVendorSupplyQty()).isEqualTo(8);
+        assertThat(service.withdraw("proposal-1", "vendor-1").getStatus())
+                .isEqualTo(ProposalStatus.WITHDRAWN);
+    }
 }
