@@ -41,6 +41,9 @@ class AdminServiceTest {
     private static final AuthenticatedUser ADMIN = new AuthenticatedUser(
             "admin-1", null, "Admin", "admin@biblione.edu",
             UserRole.ADMIN, "Library", "ADMIN", null, true, null);
+    private static final AuthenticatedUser STAFF = new AuthenticatedUser(
+            "staff-1", null, "Staff", "staff@biblione.edu",
+            UserRole.LIBRARY_STAFF, "Library", "STAFF", null, true, null);
 
     @Mock
     private AdminUserRepository userRepository;
@@ -120,6 +123,23 @@ class AdminServiceTest {
         assertThatThrownBy(() -> service.createTask(new CreateTaskRequest(
                 "staff-1", "book-1", book.getTitle(), "Shelve books", "CS-301", 10)))
                 .isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void staffCannotUpdateAnotherStaffMembersTask() {
+        StaffTask task = StaffTask.builder()
+                .id("task-1")
+                .assignedStaffId("staff-2")
+                .status(TaskStatus.PENDING)
+                .build();
+        when(taskRepository.findById("task-1")).thenReturn(Optional.of(task));
+
+        assertThatThrownBy(() -> service.updateTaskStatus(
+                "task-1",
+                new UpdateTaskStatusRequest(TaskStatus.IN_PROGRESS, null),
+                STAFF))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("only update your own");
         verify(taskRepository, never()).save(any(StaffTask.class));
     }
 

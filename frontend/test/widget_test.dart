@@ -8,6 +8,7 @@ import 'package:http/testing.dart';
 import 'package:biblione/admin/controllers/admin_api_client.dart';
 import 'package:biblione/admin/screens/admin_proposal_review_screen.dart';
 import 'package:biblione/admin/screens/publisher_proposal_form_screen.dart';
+import 'package:biblione/admin/screens/staff_portal_screen.dart';
 import 'package:biblione/api/api_client.dart';
 import 'package:biblione/debug_agent_log.dart';
 import 'package:biblione/main.dart';
@@ -15,6 +16,9 @@ import 'package:biblione/models/book.dart';
 import 'package:biblione/user_management/widgets/auth_gate.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:biblione/screens/search_catalog_screen.dart';
+import 'package:biblione/user_management/controllers/auth_controller.dart';
+import 'package:biblione/user_management/services/auth_api_client.dart';
+import 'package:biblione/user_management/services/auth_storage.dart';
 
 class FakeApiClient extends ApiClient {
   @override
@@ -48,6 +52,95 @@ void main() {
     await tester.pump(const Duration(milliseconds: 250));
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('staff portal has separate task and to-do screens', (
+    WidgetTester tester,
+  ) async {
+    final authHttp = MockClient(
+      (_) async => http.Response(
+        jsonEncode({
+          'token': 'staff-token',
+          'tokenType': 'Bearer',
+          'user': {
+            'id': 'staff-1',
+            'fullName': 'Library Staff',
+            'email': 'staff@biblione.edu',
+            'role': 'LIBRARY_STAFF',
+            'active': true,
+          },
+        }),
+        200,
+      ),
+    );
+    final authController = AuthController(
+      apiClient: AuthApiClient(
+        baseUrl: 'https://example.test',
+        client: authHttp,
+      ),
+      storage: AuthStorage(),
+    );
+    await authController.login(
+      identifier: 'staff@biblione.edu',
+      password: 'password123',
+    );
+
+    final staffHttp = MockClient((request) async {
+      if (request.url.path == '/api/v1/staff/tasks') {
+        return http.Response(
+          jsonEncode([
+            {
+              'id': 'task-1',
+              'assignedStaffId': 'staff-1',
+              'assignedStaffName': 'Library Staff',
+              'bookTitle': 'Clean Architecture',
+              'bookId': 'book-1',
+              'taskDescription': 'Shelve the new copies',
+              'targetShelfCode': 'CS-204',
+              'quantity': 2,
+              'status': 'PENDING',
+            },
+          ]),
+          200,
+        );
+      }
+      if (request.url.path == '/api/v1/staff/shelves') {
+        return http.Response(
+          jsonEncode([
+            {
+              'id': 'shelf-1',
+              'shelfCode': 'CS-204',
+              'level': 'Level 2',
+              'zone': 'East Wing',
+              'maxCapacity': 50,
+              'currentBookCount': 10,
+            },
+          ]),
+          200,
+        );
+      }
+      return http.Response('Not found', 404);
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StaffPortalScreen(
+          authController: authController,
+          apiClient: AdminApiClient(client: staffHttp),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('My tasks'), findsWidgets);
+    expect(find.text('Clean Architecture'), findsOneWidget);
+    await tester.tap(find.text('To-dos'));
+    await tester.pumpAndSettle();
+    expect(find.text('YOUR OPEN CHECKLIST'), findsOneWidget);
+    expect(find.textContaining('1 items remain'), findsOneWidget);
+
+    authHttp.close();
+    staffHttp.close();
   });
 
   testWidgets('app builds and exposes the auth gate', (

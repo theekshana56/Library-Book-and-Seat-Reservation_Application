@@ -10,6 +10,15 @@ use their email address and password to open the vendor portal, manage book
 offers, and view proposal decisions. Vendor proposal access is scoped to the
 signed-in account.
 
+## Library staff accounts
+
+Library staff accounts are created and activated by an administrator from
+**Library operations → User accounts**; there is no public staff registration.
+Staff sign in with the email and password set by the administrator and are
+directed to a staff workspace with separate **My tasks** and **To-dos** screens.
+Staff APIs identify the signed-in staff member on the server and only return or
+update tasks assigned to that account.
+
 ## Run the backend locally
 
 Backend MongoDB credentials are stored in `backend/.env`, which is ignored by

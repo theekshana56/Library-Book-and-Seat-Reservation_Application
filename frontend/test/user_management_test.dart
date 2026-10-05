@@ -411,5 +411,6 @@ void main() {
 
       expect(find.byType(BiblioneShell), findsOneWidget);
     });
+
   });
 }
