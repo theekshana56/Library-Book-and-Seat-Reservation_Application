@@ -1,14 +1,19 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'admin/screens/admin_dashboard_screen.dart';
 import 'debug_agent_log.dart';
-import 'screens/MyBookingsScreen.dart';
-import 'screens/SearchCatalogScreen.dart';
+import 'screens/home_screen.dart';
+import 'seat_recommender/screens/find_seat_screen.dart';
+import 'screens/my_bookings_screen.dart';
+import 'screens/search_catalog_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/app_colors.dart';
 import 'widgets/ui_kit.dart';
+import 'user_management/controllers/auth_controller.dart';
+import 'user_management/screens/profile_screen.dart';
+import 'user_management/widgets/auth_gate.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,7 +44,10 @@ void main() {
 }
 
 class BiblioneApp extends StatelessWidget {
-  const BiblioneApp({super.key});
+  final AuthController? authController;
+  final Widget? home;
+
+  const BiblioneApp({super.key, this.authController, this.home});
 
   @override
   Widget build(BuildContext context) {
@@ -47,35 +55,56 @@ class BiblioneApp extends StatelessWidget {
       title: 'Biblione',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: const BiblioneShell(),
+      home: home ?? AuthGate(authController: authController),
     );
   }
 }
 
 class BiblioneShell extends StatefulWidget {
-  const BiblioneShell({super.key});
+  final AuthController? authController;
+
+  const BiblioneShell({super.key, this.authController});
 
   @override
   State<BiblioneShell> createState() => _BiblioneShellState();
 }
 
 class _BiblioneShellState extends State<BiblioneShell> {
-  int _index = 2;
+  int _index = 0;
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = widget.authController?.currentUser;
+    final universityId = currentUser?.universityId;
+    final bookingsUserId =
+        universityId != null && universityId.trim().isNotEmpty
+        ? universityId.trim()
+        : currentUser?.id;
     final pages = [
-      const _PlaceholderPage(
-        title: 'Home',
-        subtitle: 'Welcome back to the university library.',
+      HomeScreen(
+        userProfile: currentUser,
+        authToken: widget.authController?.token,
+        onFindSeat: () => setState(() => _index = 1),
+        onExploreBooks: () => setState(() => _index = 2),
+        onViewBookings: () => setState(() => _index = 3),
       ),
-      const _PlaceholderPage(
-        title: 'Seats',
-        subtitle: 'Quiet pods and reading desks.',
+      FindSeatScreen(
+        userId: bookingsUserId,
+        onBack: () => setState(() => _index = 0),
       ),
       const SearchCatalogScreen(),
-      const MyBookingsScreen(),
-      _PlaceholderPage(
+      MyBookingsScreen(userId: bookingsUserId),
+      if (widget.authController != null)
+        ProfileScreen(authController: widget.authController!)
+      else
+        _PlaceholderPage(
+          title: 'Profile',
+          subtitle: 'RW • CS Dept • Card 2024-9182',
+          onAdmin: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+          ),
+        ),
+      _ProfilePage(
         title: 'Profile',
         subtitle: 'RW • CS Dept • Card 2024-9182',
         onAdmin: () => Navigator.of(
@@ -110,7 +139,25 @@ class _PlaceholderPage extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback? onAdmin;
+
   const _PlaceholderPage({
+    required this.title,
+    required this.subtitle,
+    this.onAdmin,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _ProfilePage(title: title, subtitle: subtitle, onAdmin: onAdmin);
+  }
+}
+
+class _ProfilePage extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final VoidCallback? onAdmin;
+
+  const _ProfilePage({
     required this.title,
     required this.subtitle,
     this.onAdmin,

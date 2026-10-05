@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_colors.dart';
@@ -255,7 +255,7 @@ class _StaffTaskDashboardScreenState extends State<StaffTaskDashboardScreen> {
         .map(
           (shelf) => DropdownMenuItem(
             value: shelf.shelfCode,
-            child: Text('${shelf.shelfCode} · ${shelf.level}'),
+            child: Text('${shelf.shelfCode} Â· ${shelf.level}'),
           ),
         )
         .toList(),

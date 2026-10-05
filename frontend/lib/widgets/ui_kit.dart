@@ -1,7 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../theme/app_colors.dart';
+import '../notifications/controllers/notification_controller.dart';
+import '../notifications/screens/notification_screen.dart';
+import '../notifications/services/notification_api_client.dart';
 
 class BiblioneLogoMark extends StatelessWidget {
   final double size;
@@ -9,17 +15,13 @@ class BiblioneLogoMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A9B84),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Icon(
-        Icons.menu_book_rounded,
-        color: Colors.white,
-        size: size * 0.55,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: SvgPicture.asset(
+        'assets/brand/logo.svg',
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
       ),
     );
   }
@@ -29,8 +31,8 @@ class NavyAppHeader extends StatelessWidget {
   final Widget? leading;
   final String? eyebrow;
   final String? title;
+  final String? authToken;
   final Widget? extra;
-  final String avatar;
   final bool showBell;
 
   const NavyAppHeader({
@@ -38,8 +40,8 @@ class NavyAppHeader extends StatelessWidget {
     this.leading,
     this.eyebrow,
     this.title,
+    this.authToken,
     this.extra,
-    this.avatar = 'KD',
     this.showBell = true,
   });
 
@@ -89,48 +91,7 @@ class NavyAppHeader extends StatelessWidget {
                     ],
                   ),
               const Spacer(),
-              if (showBell)
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const Icon(
-                      Icons.notifications_none_rounded,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                    Positioned(
-                      right: 1,
-                      top: 1,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF3DDC97),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.navy, width: 1.5),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              if (showBell) const SizedBox(width: 10),
-              Container(
-                width: 36,
-                height: 36,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF1A9B84),
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  avatar,
-                  style: GoogleFonts.plusJakartaSans(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
+              if (showBell) _NotificationBell(authToken: authToken),
             ],
           ),
           if (eyebrow != null || title != null || extra != null) ...[
@@ -159,6 +120,115 @@ class NavyAppHeader extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _NotificationBell extends StatefulWidget {
+  const _NotificationBell({this.authToken});
+
+  final String? authToken;
+
+  @override
+  State<_NotificationBell> createState() => _NotificationBellState();
+}
+
+class _NotificationBellState extends State<_NotificationBell>
+    with WidgetsBindingObserver {
+  static const _refreshInterval = Duration(seconds: 30);
+
+  late final NotificationController _controller = NotificationController(
+    apiClient: NotificationApiClient(token: widget.authToken),
+  );
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refreshIfAuthenticated();
+    _refreshTimer = Timer.periodic(
+      _refreshInterval,
+      (_) => _refreshIfAuthenticated(),
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshIfAuthenticated();
+    }
+  }
+
+  Future<void> _refreshIfAuthenticated() async {
+    final token = widget.authToken;
+    if (!mounted || token == null || token.isEmpty) return;
+    await _controller.loadNotifications();
+  }
+
+  Future<void> _openNotifications() async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(builder: (_) => const NotificationScreen()),
+    );
+    if (mounted) await _refreshIfAuthenticated();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _controller,
+      builder: (context, _) {
+        final unreadCount = _controller.unreadCount;
+        return IconButton(
+          tooltip: unreadCount == 0
+              ? 'Notifications'
+              : 'Notifications, $unreadCount unread',
+          onPressed: _openNotifications,
+          icon: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              const Icon(
+                Icons.notifications_none_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  right: -8,
+                  top: -7,
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 17),
+                    height: 17,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE85D5D),
+                      borderRadius: BorderRadius.circular(9),
+                      border: Border.all(color: AppColors.navy, width: 1.5),
+                    ),
+                    child: Text(
+                      unreadCount > 9 ? '9+' : '$unreadCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -256,7 +326,7 @@ class StatusPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        '●  ${label.toUpperCase()}',
+        label.toUpperCase(),
         style: GoogleFonts.plusJakartaSans(
           color: success ? AppColors.mintText : AppColors.checkedText,
           fontWeight: FontWeight.w800,

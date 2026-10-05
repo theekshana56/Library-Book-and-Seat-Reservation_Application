@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_colors.dart';
@@ -182,18 +182,21 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     if (role != null) setState(() => _role = role);
                   },
                 ),
-                SwitchListTile.adaptive(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    'Account active',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
+                Material(
+                  color: Colors.transparent,
+                  child: SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      'Account active',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
+                    value: _active,
+                    activeTrackColor: AppColors.emerald,
+                    onChanged: (value) => setState(() => _active = value),
                   ),
-                  value: _active,
-                  activeTrackColor: AppColors.emerald,
-                  onChanged: (value) => setState(() => _active = value),
                 ),
                 const SizedBox(height: 6),
                 SizedBox(
@@ -274,7 +277,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   ),
                 ),
                 Text(
-                  '${user.role.replaceAll('_', ' ')} · ${user.department}',
+                  '${user.role.replaceAll('_', ' ')} Â· ${user.department}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.plusJakartaSans(
