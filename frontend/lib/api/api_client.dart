@@ -54,6 +54,94 @@ class ApiClient {
     return Book.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
+  Future<String?> getBookSummary(Book book) async {
+    final existingSummary = book.description?.trim();
+    if (existingSummary != null && existingSummary.isNotEmpty) {
+      return existingSummary;
+    }
+
+    String? workKey;
+    final isbn = book.isbn?.trim();
+    if (isbn != null && isbn.isNotEmpty) {
+      final editionResponse = await http
+          .get(Uri.https('openlibrary.org', '/isbn/$isbn.json'))
+          .timeout(const Duration(seconds: 10));
+      if (editionResponse.statusCode == 200) {
+        final edition = _decodeOpenLibraryResponse(editionResponse);
+        final works = edition['works'];
+        if (works is List && works.isNotEmpty && works.first is Map) {
+          workKey = (works.first as Map)['key']?.toString();
+        }
+      } else if (editionResponse.statusCode != 404) {
+        throw ApiException(
+          'Book summary lookup failed (${editionResponse.statusCode}).',
+        );
+      }
+    }
+
+    if (workKey == null || !workKey.startsWith('/works/')) {
+      final searchResponse = await http
+          .get(
+            Uri.https('openlibrary.org', '/search.json', {
+              'title': book.title,
+              'author': book.author,
+              'fields': 'key',
+              'limit': '5',
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (searchResponse.statusCode != 200) {
+        throw ApiException(
+          'Book summary lookup failed (${searchResponse.statusCode}).',
+        );
+      }
+      final search = _decodeOpenLibraryResponse(searchResponse);
+      final documents = search['docs'];
+      if (documents is List) {
+        for (final document in documents) {
+          if (document is Map && document['key'] is String) {
+            final key = document['key'] as String;
+            if (key.startsWith('/works/')) {
+              workKey = key;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    if (workKey == null) return null;
+
+    final workResponse = await http
+        .get(Uri.https('openlibrary.org', '$workKey.json'))
+        .timeout(const Duration(seconds: 10));
+    if (workResponse.statusCode != 200) {
+      throw ApiException(
+        'Book summary lookup failed (${workResponse.statusCode}).',
+      );
+    }
+    final work = _decodeOpenLibraryResponse(workResponse);
+    final description = work['description'];
+    final summary = description is Map
+        ? description['value']?.toString().trim()
+        : description?.toString().trim();
+    if (summary != null && summary.isNotEmpty) return summary;
+
+    final firstSentence = work['first_sentence'];
+    final sentence = firstSentence is Map
+        ? firstSentence['value']?.toString().trim()
+        : firstSentence?.toString().trim();
+    return sentence == null || sentence.isEmpty ? null : sentence;
+  }
+
+  Map<String, dynamic> _decodeOpenLibraryResponse(http.Response response) {
+    final body = jsonDecode(response.body);
+    if (body is! Map<String, dynamic>) {
+      throw ApiException('Book summary lookup returned an invalid response.');
+    }
+    return body;
+  }
+
   Future<Reservation> reserveBook(String bookId) async {
     String currentUserId = demoUserId;
     try {
@@ -94,6 +182,26 @@ class ApiClient {
   Future<void> cancelReservation(String id) async {
     final res = await http.post(
       Uri.parse('$baseUrl/api/v1/reservations/$id/cancel'),
+    );
+    _ensureOk(res);
+  }
+
+  Future<Reservation> updateReservation(
+    String id, {
+    required String bookId,
+  }) async {
+    final res = await http.put(
+      Uri.parse('$baseUrl/api/v1/reservations/$id'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'bookId': bookId}),
+    );
+    _ensureOk(res);
+    return Reservation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  Future<void> deleteReservation(String id) async {
+    final res = await http.delete(
+      Uri.parse('$baseUrl/api/v1/reservations/$id'),
     );
     _ensureOk(res);
   }

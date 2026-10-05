@@ -4,13 +4,16 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../api/api_client.dart';
+import '../models/book.dart';
 import '../models/models.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ui_kit.dart';
 
 class MyBookingsScreen extends StatefulWidget {
-  const MyBookingsScreen({super.key});
+  final String? userId;
+
+  const MyBookingsScreen({super.key, this.userId});
 
   @override
   State<MyBookingsScreen> createState() => _MyBookingsScreenState();
@@ -35,7 +38,18 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       _error = null;
     });
     try {
-      final data = await _api.getBookings();
+      var data = await _api.getBookings(widget.userId);
+      final userId = widget.userId;
+      if (_hasNoBookings(data) &&
+          userId != null &&
+          userId.toLowerCase().endsWith('v')) {
+        final fallbackData = await _api.getBookings(
+          userId.substring(0, userId.length - 1),
+        );
+        if (!_hasNoBookings(fallbackData)) {
+          data = fallbackData;
+        }
+      }
       setState(() {
         _data = data;
         _loading = false;
@@ -47,6 +61,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       });
     }
   }
+
+  bool _hasNoBookings(UserBookings data) =>
+      data.reservations.isEmpty && data.seatHolds.isEmpty && data.loans.isEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +163,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          ApiClient.demoUserId,
+                          data?.userId ??
+                              widget.userId ??
+                              ApiClient.demoUserId,
                           style: GoogleFonts.plusJakartaSans(
                             fontWeight: FontWeight.w800,
                             fontSize: 11,
@@ -272,6 +291,14 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   }
 
   Widget _reservationCard(Reservation r) {
+    final deadline = _reservationManagementDeadline(r);
+    final canManage =
+        DateTime.now().isBefore(deadline) &&
+        (r.status == 'READY_FOR_PICKUP' || r.status == 'CONFIRMED');
+    final remaining = deadline.difference(DateTime.now());
+    final windowLabel = canManage
+        ? 'Editable for ${remaining.inHours}h ${remaining.inMinutes.remainder(60)}m'
+        : 'Change window closed';
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(14),
@@ -299,7 +326,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
               ),
               const SizedBox(width: 4),
               Text(
-                '24h Window Left',
+                windowLabel,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -434,21 +461,209 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                   onPressed: () => _showBarcode(r),
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: SoftButton(
+                  label: 'Change Book',
+                  icon: Icons.menu_book_outlined,
+                  onPressed: canManage ? () => _changeReservationBook(r) : null,
+                ),
+              ),
               const SizedBox(width: 8),
-              SoftButton(
-                label: 'Cancel',
-                icon: Icons.close,
-                expanded: false,
-                onPressed: () async {
-                  await _api.cancelReservation(r.id);
-                  _load();
-                },
+              Expanded(
+                child: SoftButton(
+                  label: 'Cancel',
+                  icon: Icons.close,
+                  foreground: const Color(0xFFB42318),
+                  onPressed: canManage ? () => _deleteReservation(r) : null,
+                ),
               ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  DateTime _reservationManagementDeadline(Reservation reservation) {
+    final policyDeadline = reservation.createdAt.add(const Duration(hours: 24));
+    return reservation.expiresAt.isBefore(policyDeadline)
+        ? reservation.expiresAt
+        : policyDeadline;
+  }
+
+  Future<void> _changeReservationBook(Reservation reservation) async {
+    try {
+      final booksFuture = _api.searchBooks();
+      final selectedBook = await showDialog<Book>(
+        context: context,
+        builder: (dialogContext) {
+          var query = '';
+          return StatefulBuilder(
+            builder: (context, setDialogState) => AlertDialog(
+              title: const Text('Choose another book'),
+              content: SizedBox(
+                width: 420,
+                height: 420,
+                child: Column(
+                  children: [
+                    TextField(
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.search),
+                        hintText: 'Search available books',
+                      ),
+                      onChanged: (value) =>
+                          setDialogState(() => query = value.trim()),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: FutureBuilder<List<Book>>(
+                        future: booksFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: Text(snapshot.error.toString()),
+                            );
+                          }
+                          final availableBooks = (snapshot.data ?? [])
+                              .where(
+                                (book) =>
+                                    book.id != reservation.bookId &&
+                                    book.isAvailable &&
+                                    (query.isEmpty ||
+                                        book.title.toLowerCase().contains(
+                                          query.toLowerCase(),
+                                        ) ||
+                                        book.author.toLowerCase().contains(
+                                          query.toLowerCase(),
+                                        )),
+                              )
+                              .toList();
+                          if (availableBooks.isEmpty) {
+                            return const Center(
+                              child: Text('No other available books found.'),
+                            );
+                          }
+                          return ListView.builder(
+                            itemCount: availableBooks.length,
+                            itemBuilder: (context, index) {
+                              final book = availableBooks[index];
+                              return ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: BookCover(
+                                  url: book.coverImageUrl,
+                                  width: 38,
+                                  height: 52,
+                                ),
+                                title: Text(
+                                  book.title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: Text(
+                                  '${book.author} · ${book.copiesLabel}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                onTap: () =>
+                                    Navigator.pop(dialogContext, book),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Keep current book'),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+      if (selectedBook == null || !mounted) return;
+
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Change reserved book?'),
+          content: Text(
+            'Replace "${reservation.title}" with "${selectedBook.title}"?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Keep current'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Change book'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+
+      await _api.updateReservation(reservation.id, bookId: selectedBook.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Book changed to "${selectedBook.title}".')),
+      );
+      await _load();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
+  Future<void> _deleteReservation(Reservation reservation) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cancel book hold?'),
+        content: Text('Cancel the hold for "${reservation.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep hold'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Cancel hold'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await _api.deleteReservation(reservation.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Book hold cancelled.')));
+      await _load();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
+    }
   }
 
   Widget _seatCard(SeatHold s) {
