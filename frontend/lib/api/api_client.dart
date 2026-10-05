@@ -85,9 +85,34 @@ class ApiClient {
     _ensureOk(res);
   }
 
-  Future<UserBookings> getBookings() async {
+  Future<Reservation> updateReservation(
+    String id, {
+    required String pickupDesk,
+    required String pickupDeskDetail,
+  }) async {
+    final res = await http.put(
+      Uri.parse('$baseUrl/api/v1/reservations/$id'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'pickupDesk': pickupDesk,
+        'pickupDeskDetail': pickupDeskDetail,
+      }),
+    );
+    _ensureOk(res);
+    return Reservation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  Future<void> deleteReservation(String id) async {
+    final res = await http.delete(
+      Uri.parse('$baseUrl/api/v1/reservations/$id'),
+    );
+    _ensureOk(res);
+  }
+
+  Future<UserBookings> getBookings([String? userId]) async {
+    final targetId = userId ?? demoUserId;
     final res = await http.get(
-      Uri.parse('$baseUrl/api/v1/users/$demoUserId/bookings'),
+      Uri.parse('$baseUrl/api/v1/users/$targetId/bookings'),
     );
     _ensureOk(res);
     return UserBookings.fromJson(jsonDecode(res.body) as Map<String, dynamic>);

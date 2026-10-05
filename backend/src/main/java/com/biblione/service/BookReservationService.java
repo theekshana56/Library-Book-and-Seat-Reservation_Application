@@ -1,6 +1,7 @@
 package com.biblione.service;
 
 import com.biblione.dto.CreateReservationRequest;
+import com.biblione.dto.UpdateReservationRequest;
 import com.biblione.dto.UserBookingsResponse;
 import com.biblione.exception.ApiException;
 import com.biblione.model.Book;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
@@ -30,6 +32,7 @@ public class BookReservationService {
 
     static final List<String> ACTIVE_RESERVATION_STATUSES = List.of("READY_FOR_PICKUP", "CONFIRMED");
     static final int DEFAULT_LOAN_LIMIT = 5;
+    private static final Duration RESERVATION_MANAGEMENT_WINDOW = Duration.ofHours(24);
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -173,6 +176,7 @@ public class BookReservationService {
         if ("CANCELLED".equals(reservation.getStatus()) || "EXPIRED".equals(reservation.getStatus())) {
             throw new ApiException(HttpStatus.CONFLICT, "Reservation is no longer active.");
         }
+        requireManageableReservation(reservation);
 
         reservation.setStatus("CANCELLED");
         reservationRepository.save(reservation);
@@ -183,6 +187,36 @@ public class BookReservationService {
         });
 
         return reservation;
+    }
+
+    public Reservation updateReservation(String reservationId, UpdateReservationRequest request) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Reservation not found"));
+
+        requireManageableReservation(reservation);
+        reservation.setPickupDesk(request.getPickupDesk().trim());
+        reservation.setPickupDeskDetail(request.getPickupDeskDetail().trim());
+        return reservationRepository.save(reservation);
+    }
+
+    private void requireManageableReservation(Reservation reservation) {
+        if (!ACTIVE_RESERVATION_STATUSES.contains(reservation.getStatus())) {
+            throw new ApiException(HttpStatus.CONFLICT, "Reservation is no longer active.");
+        }
+
+        Instant createdAt = reservation.getCreatedAt();
+        if (createdAt == null) {
+            throw new ApiException(HttpStatus.CONFLICT, "Reservation has no valid management window.");
+        }
+
+        Instant deadline = createdAt.plus(RESERVATION_MANAGEMENT_WINDOW);
+        if (reservation.getExpiresAt() != null && reservation.getExpiresAt().isBefore(deadline)) {
+            deadline = reservation.getExpiresAt();
+        }
+        if (!Instant.now().isBefore(deadline)) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "Reservations can only be changed or cancelled within 24 hours of being placed.");
+        }
     }
 
     public Loan renewLoan(String loanId) {
