@@ -1,6 +1,7 @@
 package com.biblione.service;
 
 import com.biblione.dto.CreateReservationRequest;
+import com.biblione.dto.UpdateReservationRequest;
 import com.biblione.exception.ApiException;
 import com.biblione.model.Book;
 import com.biblione.model.Loan;
@@ -161,6 +162,8 @@ class BookReservationServiceTest {
                 .id("res-1")
                 .bookId("book-ddia")
                 .status("READY_FOR_PICKUP")
+                .createdAt(Instant.now())
+                .expiresAt(Instant.now().plus(24, ChronoUnit.HOURS))
                 .build();
         Book book = Book.builder().id("book-ddia").availableCopies(1).totalCopies(3).build();
         when(reservationRepository.findById("res-1")).thenReturn(Optional.of(reservation));
@@ -172,6 +175,91 @@ class BookReservationServiceTest {
 
         assertThat(reservation.getStatus()).isEqualTo("CANCELLED");
         assertThat(book.getAvailableCopies()).isEqualTo(2);
+    }
+
+    @Test
+    void updateReservationChangesBookAndTransfersStockWithinManagementWindow() {
+        Reservation reservation = Reservation.builder()
+                .id("res-1")
+                .userId("user-1")
+                .bookId("old-book")
+                .status("READY_FOR_PICKUP")
+                .createdAt(Instant.now())
+                .expiresAt(Instant.now().plus(24, ChronoUnit.HOURS))
+                .build();
+        Book oldBook = Book.builder()
+                .id("old-book")
+                .availableCopies(1)
+                .totalCopies(3)
+                .build();
+        Book replacement = Book.builder()
+                .id("new-book")
+                .title("New Book")
+                .author("New Author")
+                .availableCopies(2)
+                .totalCopies(3)
+                .shelfCode("CS-210")
+                .pickupDesk("North Desk")
+                .pickupDeskDetail("Level 2, North Entrance")
+                .build();
+        UpdateReservationRequest request = new UpdateReservationRequest();
+        request.setBookId("new-book");
+        when(reservationRepository.findById("res-1")).thenReturn(Optional.of(reservation));
+        when(reservationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(reservationRepository.existsByUserIdAndBookIdAndStatusIn(
+                "user-1", "new-book", BookReservationService.ACTIVE_RESERVATION_STATUSES))
+                .thenReturn(false);
+        when(bookRepository.findById("new-book")).thenReturn(Optional.of(replacement));
+        when(bookRepository.findById("old-book")).thenReturn(Optional.of(oldBook));
+        when(bookRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Reservation updated = service.updateReservation("res-1", request);
+
+        assertThat(updated.getBookId()).isEqualTo("new-book");
+        assertThat(updated.getTitle()).isEqualTo("New Book");
+        assertThat(updated.getPickupDesk()).isEqualTo("North Desk");
+        assertThat(replacement.getAvailableCopies()).isEqualTo(1);
+        assertThat(oldBook.getAvailableCopies()).isEqualTo(2);
+    }
+
+    @Test
+    void updateReservationIsRejectedAfterManagementWindow() {
+        Reservation reservation = Reservation.builder()
+                .id("res-1")
+                .userId("user-1")
+                .bookId("old-book")
+                .status("READY_FOR_PICKUP")
+                .createdAt(Instant.now().minus(25, ChronoUnit.HOURS))
+                .expiresAt(Instant.now().plus(1, ChronoUnit.HOURS))
+                .build();
+        UpdateReservationRequest request = new UpdateReservationRequest();
+        request.setBookId("new-book");
+        when(reservationRepository.findById("res-1")).thenReturn(Optional.of(reservation));
+
+        assertThatThrownBy(() -> service.updateReservation("res-1", request))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("within 24 hours");
+
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void cancelReservationIsRejectedAfterManagementWindow() {
+        Reservation reservation = Reservation.builder()
+                .id("res-1")
+                .bookId("book-ddia")
+                .status("READY_FOR_PICKUP")
+                .createdAt(Instant.now().minus(25, ChronoUnit.HOURS))
+                .expiresAt(Instant.now().plus(1, ChronoUnit.HOURS))
+                .build();
+        when(reservationRepository.findById("res-1")).thenReturn(Optional.of(reservation));
+
+        assertThatThrownBy(() -> service.cancelReservation("res-1"))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("within 24 hours");
+
+        verify(reservationRepository, never()).save(any());
+        verify(bookRepository, never()).findById("book-ddia");
     }
 
     @Test
