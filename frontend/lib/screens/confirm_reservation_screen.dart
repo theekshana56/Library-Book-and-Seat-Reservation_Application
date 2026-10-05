@@ -202,7 +202,7 @@ class _ConfirmReservationScreenState extends State<ConfirmReservationScreen> {
                 ),
                 const SizedBox(height: 18),
                 PrimaryButton(
-                  label: _submitting ? 'Placing holdâ€¦' : 'Confirm & Place Hold',
+                  label: _submitting ? 'Placing hold...' : 'Confirm & Place Hold',
                   trailing: Icons.arrow_forward_rounded,
                   onPressed: _submitting ? null : _confirm,
                 ),

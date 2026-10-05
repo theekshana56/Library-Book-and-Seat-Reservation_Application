@@ -176,7 +176,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Operational overview Â· ${stats.activeUsers} active accounts',
+                'Operational overview | ${stats.activeUsers} active accounts',
                 style: GoogleFonts.plusJakartaSans(
                   color: const Color(0xFFB8C7D5),
                   fontSize: 11,

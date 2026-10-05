@@ -257,7 +257,7 @@ class _StaffTaskDashboardScreenState extends State<StaffTaskDashboardScreen> {
         .map(
           (shelf) => DropdownMenuItem(
             value: shelf.shelfCode,
-            child: Text('${shelf.shelfCode} Â· ${shelf.level}'),
+            child: Text('${shelf.shelfCode} | ${shelf.level}'),
           ),
         )
         .toList(),
