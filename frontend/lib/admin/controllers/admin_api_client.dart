@@ -4,18 +4,24 @@ import 'package:http/http.dart' as http;
 
 import '../../api/api_client.dart';
 import '../../models/book.dart';
+import '../../user_management/services/auth_storage.dart';
 import '../models/admin_models.dart';
 
 class AdminApiClient {
   final http.Client _http;
+  final AuthStorage _authStorage;
 
-  AdminApiClient({http.Client? client}) : _http = client ?? http.Client();
+  AdminApiClient({http.Client? client, AuthStorage? authStorage})
+    : _http = client ?? http.Client(),
+      _authStorage = authStorage ?? AuthStorage();
 
   Uri _uri(String path, [Map<String, String>? query]) =>
       Uri.parse('${ApiClient.baseUrl}$path').replace(queryParameters: query);
 
   Future<AdminStats> getStats() async => AdminStats.fromJson(
-    await _map(await _http.get(_uri('/api/v1/admin/stats'))),
+    await _map(
+      await _http.get(_uri('/api/v1/admin/stats'), headers: await _headers),
+    ),
   );
 
   Future<List<AdminUser>> getUsers({String? role, bool? active}) async {
@@ -23,7 +29,9 @@ class AdminApiClient {
       'role': ?role,
       'active': ?active?.toString(),
     };
-    return (await _list(await _http.get(_uri('/api/v1/admin/users', query))))
+    return (await _list(
+      await _http.get(_uri('/api/v1/admin/users', query), headers: await _headers),
+    ))
         .map(AdminUser.fromJson)
         .toList();
   }
@@ -33,7 +41,7 @@ class AdminApiClient {
         await _map(
           await _http.post(
             _uri('/api/v1/admin/users'),
-            headers: _headers,
+            headers: await _headers,
             body: jsonEncode(payload),
           ),
         ),
@@ -44,20 +52,25 @@ class AdminApiClient {
         await _map(
           await _http.put(
             _uri('/api/v1/admin/users/$id/status'),
-            headers: _headers,
+            headers: await _headers,
             body: jsonEncode({'active': active}),
           ),
         ),
       );
 
   Future<List<PublisherProposal>> getProposals() async =>
-      (await _list(await _http.get(_uri('/api/v1/admin/proposals'))))
+      (await _list(
+        await _http.get(_uri('/api/v1/admin/proposals'), headers: await _headers),
+      ))
           .map(PublisherProposal.fromJson)
           .toList();
 
   Future<List<PublisherProposal>> getVendorProposals(String vendorId) async =>
       (await _list(
-        await _http.get(_uri('/api/v1/publisher/proposals/vendor/$vendorId')),
+        await _http.get(
+          _uri('/api/v1/publisher/proposals/vendor/$vendorId'),
+          headers: await _headers,
+        ),
       )).map(PublisherProposal.fromJson).toList();
 
   Future<PublisherProposal> submitProposal(
@@ -66,7 +79,7 @@ class AdminApiClient {
     await _map(
       await _http.post(
         _uri('/api/v1/publisher/proposals'),
-        headers: _headers,
+        headers: await _headers,
         body: jsonEncode(payload),
       ),
     ),
@@ -81,7 +94,7 @@ class AdminApiClient {
     await _map(
       await _http.put(
         _uri('/api/v1/admin/proposals/$id/review'),
-        headers: _headers,
+        headers: await _headers,
         body: jsonEncode({
           'approved': approved,
           'requestedLotQty': quantity,
@@ -92,7 +105,12 @@ class AdminApiClient {
   );
 
   Future<List<StaffTask>> getStaffTasks(String staffId) async =>
-      (await _list(await _http.get(_uri('/api/v1/admin/tasks/staff/$staffId'))))
+      (await _list(
+        await _http.get(
+          _uri('/api/v1/admin/tasks/staff/$staffId'),
+          headers: await _headers,
+        ),
+      ))
           .map(StaffTask.fromJson)
           .toList();
 
@@ -101,7 +119,7 @@ class AdminApiClient {
         await _map(
           await _http.post(
             _uri('/api/v1/admin/tasks'),
-            headers: _headers,
+            headers: await _headers,
             body: jsonEncode(payload),
           ),
         ),
@@ -115,14 +133,16 @@ class AdminApiClient {
     await _map(
       await _http.put(
         _uri('/api/v1/admin/tasks/$id/status'),
-        headers: _headers,
+        headers: await _headers,
         body: jsonEncode({'status': status, 'targetShelfCode': shelfCode}),
       ),
     ),
   );
 
   Future<List<LibraryShelf>> getShelves() async =>
-      (await _list(await _http.get(_uri('/api/v1/admin/shelves'))))
+      (await _list(
+        await _http.get(_uri('/api/v1/admin/shelves'), headers: await _headers),
+      ))
           .map(LibraryShelf.fromJson)
           .toList();
 
@@ -133,19 +153,21 @@ class AdminApiClient {
     final response = id == null
         ? await _http.post(
             _uri('/api/v1/admin/shelves'),
-            headers: _headers,
+            headers: await _headers,
             body: jsonEncode(payload),
           )
         : await _http.put(
             _uri('/api/v1/admin/shelves/$id'),
-            headers: _headers,
+            headers: await _headers,
             body: jsonEncode(payload),
           );
     return LibraryShelf.fromJson(await _map(response));
   }
 
   Future<List<LibraryHall>> getHalls() async =>
-      (await _list(await _http.get(_uri('/api/v1/admin/halls'))))
+      (await _list(
+        await _http.get(_uri('/api/v1/admin/halls'), headers: await _headers),
+      ))
           .map(LibraryHall.fromJson)
           .toList();
 
@@ -154,14 +176,16 @@ class AdminApiClient {
         await _map(
           await _http.post(
             _uri('/api/v1/admin/halls'),
-            headers: _headers,
+            headers: await _headers,
             body: jsonEncode(payload),
           ),
         ),
       );
 
   Future<List<LibrarySeat>> getSeats() async =>
-      (await _list(await _http.get(_uri('/api/v1/admin/seats'))))
+      (await _list(
+        await _http.get(_uri('/api/v1/admin/seats'), headers: await _headers),
+      ))
           .map(LibrarySeat.fromJson)
           .toList();
 
@@ -170,17 +194,26 @@ class AdminApiClient {
         await _map(
           await _http.post(
             _uri('/api/v1/admin/seats'),
-            headers: _headers,
+            headers: await _headers,
             body: jsonEncode(payload),
           ),
         ),
       );
 
   Future<List<Book>> getPendingShelvingBooks() async => (await _list(
-    await _http.get(_uri('/api/v1/admin/books/pending-shelving')),
+    await _http.get(
+      _uri('/api/v1/admin/books/pending-shelving'),
+      headers: await _headers,
+    ),
   )).map(Book.fromJson).toList();
 
-  static const _headers = {'Content-Type': 'application/json'};
+  Future<Map<String, String>> get _headers async {
+    final token = await _authStorage.getToken();
+    return {
+      'Content-Type': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+  }
 
   Future<Map<String, dynamic>> _map(http.Response response) async {
     _ensureOk(response);

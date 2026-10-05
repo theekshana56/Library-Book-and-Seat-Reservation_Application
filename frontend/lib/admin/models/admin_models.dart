@@ -5,6 +5,7 @@
   final String role;
   final String department;
   final String userCategory;
+  final String vendorCompanyName;
   final bool active;
 
   const AdminUser({
@@ -14,6 +15,7 @@
     required this.role,
     required this.department,
     required this.userCategory,
+    this.vendorCompanyName = '',
     required this.active,
   });
 
@@ -24,6 +26,7 @@
     role: json['role']?.toString() ?? 'STUDENT',
     department: json['department']?.toString() ?? '',
     userCategory: json['userCategory']?.toString() ?? '',
+    vendorCompanyName: json['vendorCompanyName']?.toString() ?? '',
     active: json['active'] == true,
   );
 }
