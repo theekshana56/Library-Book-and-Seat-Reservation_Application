@@ -12,12 +12,12 @@ import '../widgets/admin_widgets.dart';
 const _googleBooksApiKey = String.fromEnvironment('GOOGLE_BOOKS_API_KEY');
 
 class PublisherProposalFormScreen extends StatefulWidget {
-  final String initialVendorId;
+  final String vendorId;
   final AdminApiClient? apiClient;
   final http.Client? googleBooksClient;
   const PublisherProposalFormScreen({
     super.key,
-    this.initialVendorId = 'seed-vendor',
+    required this.vendorId,
     this.apiClient,
     this.googleBooksClient,
   });
@@ -33,7 +33,6 @@ class _PublisherProposalFormScreenState
   late final http.Client _googleBooksClient;
   late final bool _ownsGoogleBooksClient;
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _vendorId;
   late final TextEditingController _title;
   late final TextEditingController _author;
   late final TextEditingController _isbn;
@@ -54,7 +53,6 @@ class _PublisherProposalFormScreenState
     _api = widget.apiClient ?? AdminApiClient();
     _ownsGoogleBooksClient = widget.googleBooksClient == null;
     _googleBooksClient = widget.googleBooksClient ?? http.Client();
-    _vendorId = TextEditingController(text: widget.initialVendorId);
     _title = TextEditingController();
     _author = TextEditingController();
     _isbn = TextEditingController();
@@ -63,7 +61,7 @@ class _PublisherProposalFormScreenState
     _price = TextEditingController();
     _quantity = TextEditingController();
     _coverUrl = TextEditingController();
-    _load(vendorId: widget.initialVendorId);
+    _load(vendorId: widget.vendorId);
   }
 
   @override
@@ -76,7 +74,6 @@ class _PublisherProposalFormScreenState
       data: {'mounted': mounted, 'saving': _saving, 'lookingUp': _lookingUpIsbn},
     );
     // #endregion
-    _vendorId.dispose();
     _title.dispose();
     _author.dispose();
     _isbn.dispose();
@@ -91,7 +88,7 @@ class _PublisherProposalFormScreenState
 
   Future<void> _load({String? vendorId}) async {
     if (!mounted) return;
-    final requestedVendorId = vendorId ?? _vendorId.text.trim();
+    final requestedVendorId = vendorId ?? widget.vendorId;
     setState(() {
       _loading = true;
       _error = null;
@@ -116,7 +113,6 @@ class _PublisherProposalFormScreenState
     if (!mounted || _saving || _lookingUpIsbn) return;
     if (!_formKey.currentState!.validate()) return;
     final payload = <String, dynamic>{
-      'vendorId': _vendorId.text.trim(),
       'bookTitle': _title.text.trim(),
       'author': _author.text.trim(),
       'isbn': _isbn.text.trim(),
@@ -153,7 +149,7 @@ class _PublisherProposalFormScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Offer submitted for admin review.')),
       );
-      await _load(vendorId: payload['vendorId'] as String);
+      await _load(vendorId: widget.vendorId);
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -318,12 +314,6 @@ class _PublisherProposalFormScreenState
                 children: [
                   const AdminSectionTitle('Book details'),
                   const SizedBox(height: 13),
-                  AdminField(
-                    label: 'Vendor account ID',
-                    controller: _vendorId,
-                    validator: _required,
-                  ),
-                  const SizedBox(height: 10),
                   AdminField(
                     label: 'Book title',
                     controller: _title,
