@@ -163,9 +163,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          data?.userId ??
-                              widget.userId ??
-                              ApiClient.demoUserId,
+                          data?.userId ?? widget.userId ?? ApiClient.demoUserId,
                           style: GoogleFonts.plusJakartaSans(
                             fontWeight: FontWeight.w800,
                             fontSize: 11,
@@ -398,7 +396,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'CS-${r.shelfCode.contains('-') ? r.shelfCode.split('-').last : r.shelfCode} Â· L2 Stacks 8',
+                        'Shelf ${r.shelfCode}${r.shelfDetail.isEmpty ? '' : ' | ${r.shelfDetail}'}',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -575,8 +573,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                onTap: () =>
-                                    Navigator.pop(dialogContext, book),
+                                onTap: () => Navigator.pop(dialogContext, book),
                               );
                             },
                           );
@@ -627,9 +624,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       await _load();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
     }
   }
 
@@ -867,7 +863,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            child: const Text('â†»  Renew'),
+            child: const Text('Renew'),
           ),
         ],
       ),
