@@ -1,5 +1,15 @@
 # Library-Book-and-Seat-Reservation_Application
 
+## Vendor accounts
+
+Vendors can choose **Vendor** on the registration screen and apply using their
+contact name, company/publisher name, email, and password; no university ID is
+required. A library administrator must activate the pending vendor account from
+**Library operations → User accounts** before it can sign in. Approved vendors
+use their email address and password to open the vendor portal, manage book
+offers, and view proposal decisions. Vendor proposal access is scoped to the
+signed-in account.
+
 ## Run the backend locally
 
 Backend MongoDB credentials are stored in `backend/.env`, which is ignored by

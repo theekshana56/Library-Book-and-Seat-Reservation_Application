@@ -13,6 +13,7 @@ import com.biblione.admin.model.Shelf;
 import com.biblione.admin.model.StaffTask;
 import com.biblione.admin.model.UserRole;
 import com.biblione.admin.service.AdminService;
+import com.biblione.auth.security.AuthContext;
 import com.biblione.model.Book;
 import com.biblione.model.Seat;
 import jakarta.validation.Valid;
@@ -75,14 +76,14 @@ public class AdminController {
 
     @GetMapping("/tasks/staff/{staffId}")
     public List<StaffTask> getStaffTasks(@PathVariable String staffId) {
-        return adminService.getStaffTasks(staffId);
+        return adminService.getStaffTasks(staffId, AuthContext.getCurrentUser());
     }
 
     @PutMapping("/tasks/{id}/status")
     public StaffTask updateTaskStatus(
             @PathVariable String id,
             @Valid @RequestBody UpdateTaskStatusRequest request) {
-        return adminService.updateTaskStatus(id, request);
+        return adminService.updateTaskStatus(id, request, AuthContext.getCurrentUser());
     }
 
     @PostMapping("/shelves")

@@ -26,8 +26,8 @@ public class PublisherProposalService {
     private final AdminUserRepository userRepository;
     private final BookRepository bookRepository;
 
-    public PublisherProposal submit(CreateProposalRequest request) {
-        AdminUser vendor = userRepository.findById(request.vendorId())
+    public PublisherProposal submit(String vendorId, CreateProposalRequest request) {
+        AdminUser vendor = userRepository.findById(vendorId)
                 .filter(user -> user.isActive() && user.getRole() == UserRole.VENDOR)
                 .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "The selected account is not an active vendor."));
         return proposalRepository.save(PublisherProposal.builder()
@@ -46,7 +46,10 @@ public class PublisherProposalService {
                 .build());
     }
 
-    public List<PublisherProposal> getVendorProposals(String vendorId) {
+    public List<PublisherProposal> getVendorProposals(String vendorId, String authenticatedVendorId) {
+        if (!vendorId.equals(authenticatedVendorId)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "You can only view your own proposals.");
+        }
         return proposalRepository.findByVendorIdOrderByCreatedAtDesc(vendorId);
     }
 

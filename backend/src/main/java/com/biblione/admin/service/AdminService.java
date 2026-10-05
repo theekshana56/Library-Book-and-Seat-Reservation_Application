@@ -19,6 +19,7 @@ import com.biblione.admin.repository.ShelfRepository;
 import com.biblione.admin.repository.StaffTaskRepository;
 import com.biblione.admin.dto.UpdateUserStatusRequest;
 import com.biblione.exception.ApiException;
+import com.biblione.auth.security.AuthenticatedUser;
 import com.biblione.model.Book;
 import com.biblione.model.Seat;
 import com.biblione.repository.BookRepository;
@@ -134,13 +135,22 @@ public class AdminService {
                 .build());
     }
 
-    public List<StaffTask> getStaffTasks(String staffId) {
+    public List<StaffTask> getStaffTasks(String staffId, AuthenticatedUser currentUser) {
+        if (currentUser.role() == UserRole.LIBRARY_STAFF && !staffId.equals(currentUser.id())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "You can only view your own assigned tasks.");
+        }
         return taskRepository.findByAssignedStaffIdOrderByCreatedAtDesc(staffId);
     }
 
-    public StaffTask updateTaskStatus(String id, UpdateTaskStatusRequest request) {
+    public StaffTask updateTaskStatus(
+            String id,
+            UpdateTaskStatusRequest request,
+            AuthenticatedUser currentUser) {
         StaffTask task = taskRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Staff task not found."));
+        if (currentUser.role() == UserRole.LIBRARY_STAFF && !task.getAssignedStaffId().equals(currentUser.id())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "You can only update your own assigned tasks.");
+        }
         if (request.status() == TaskStatus.PENDING) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Task status can only move to IN_PROGRESS or COMPLETED.");
         }
