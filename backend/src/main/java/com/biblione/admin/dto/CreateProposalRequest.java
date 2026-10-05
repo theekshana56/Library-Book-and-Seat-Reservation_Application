@@ -4,7 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
 public record CreateProposalRequest(
-        @NotBlank String vendorId,
         @NotBlank String bookTitle,
         @NotBlank String author,
         String isbn,

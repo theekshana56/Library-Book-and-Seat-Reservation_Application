@@ -42,5 +42,6 @@ public class AdminUser {
 
     private String department;
     private String userCategory;
+    private String vendorCompanyName;
     private boolean active;
 }
