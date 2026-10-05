@@ -12,7 +12,9 @@ import 'package:biblione/api/api_client.dart';
 import 'package:biblione/debug_agent_log.dart';
 import 'package:biblione/main.dart';
 import 'package:biblione/models/book.dart';
-import 'package:biblione/screens/SearchCatalogScreen.dart';
+import 'package:biblione/user_management/widgets/auth_gate.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:biblione/screens/search_catalog_screen.dart';
 
 class FakeApiClient extends ApiClient {
   @override
@@ -26,6 +28,9 @@ class FakeApiClient extends ApiClient {
 }
 
 void main() {
+  setUp(() {
+    FlutterSecureStorage.setMockInitialValues({});
+  });
   testWidgets('search catalog does not update state after disposal', (
     WidgetTester tester,
   ) async {
@@ -45,13 +50,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('app builds and exposes the main shell', (
+  testWidgets('app builds and exposes the auth gate', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const BiblioneApp());
 
     expect(find.byType(MaterialApp), findsOneWidget);
-    expect(find.byType(BiblioneShell), findsOneWidget);
+    expect(find.byType(AuthGate), findsOneWidget);
   });
 
   testWidgets('vendor submit and reload do not break the pushed admin route', (
@@ -131,6 +136,118 @@ void main() {
     expect(find.text('Open vendor form'), findsOneWidget);
     expect(tester.takeException(), isNull);
     client.close();
+  });
+
+  testWidgets('vendor ISBN lookup fills book details from Google Books', (
+    WidgetTester tester,
+  ) async {
+    http.Request? lookupRequest;
+    final apiClient = MockClient((_) async => http.Response('[]', 200));
+    final googleBooksClient = MockClient((request) async {
+      lookupRequest = request;
+      return http.Response(
+        jsonEncode({
+          'items': [
+            {
+              'volumeInfo': {
+                'title': 'The Pragmatic Programmer',
+                'authors': ['David Thomas'],
+                'categories': ['Computers'],
+                'description': 'A software development book.',
+                'imageLinks': {'thumbnail': 'http://example.com/cover.jpg'},
+              },
+            },
+          ],
+        }),
+        200,
+      );
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PublisherProposalFormScreen(
+          apiClient: AdminApiClient(client: apiClient),
+          googleBooksClient: googleBooksClient,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final isbnField = find.byType(TextFormField).at(3);
+    await tester.ensureVisible(isbnField);
+    await tester.enterText(isbnField, '978-0-13-595705-9');
+    final lookupButton = find.widgetWithText(
+      FilledButton,
+      'Auto-Fill from ISBN',
+    );
+    await tester.ensureVisible(lookupButton);
+    await tester.tap(lookupButton);
+    await tester.pumpAndSettle();
+
+    final fields = tester.widgetList<TextFormField>(find.byType(TextFormField));
+    expect(lookupRequest?.url.host, 'www.googleapis.com');
+    expect(lookupRequest?.url.path, '/books/v1/volumes');
+    expect(lookupRequest?.url.queryParameters['q'], 'isbn:9780135957059');
+    expect(fields.elementAt(1).controller?.text, 'The Pragmatic Programmer');
+    expect(fields.elementAt(2).controller?.text, 'David Thomas');
+    expect(fields.elementAt(4).controller?.text, 'Computers');
+    expect(
+      fields.elementAt(8).controller?.text,
+      'https://example.com/cover.jpg',
+    );
+    expect(find.text('Book details filled from Google Books.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox());
+    apiClient.close();
+    googleBooksClient.close();
+  });
+
+  testWidgets('vendor ISBN lookup reports Google Books quota errors', (
+    WidgetTester tester,
+  ) async {
+    final apiClient = MockClient((_) async => http.Response('[]', 200));
+    final googleBooksClient = MockClient(
+      (_) async => http.Response(
+        jsonEncode({
+          'error': {'code': 429, 'message': 'Quota exceeded'},
+        }),
+        429,
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PublisherProposalFormScreen(
+          apiClient: AdminApiClient(client: apiClient),
+          googleBooksClient: googleBooksClient,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final isbnField = find.byType(TextFormField).at(3);
+    await tester.ensureVisible(isbnField);
+    await tester.enterText(isbnField, '9780135957059');
+    final lookupButton = find.widgetWithText(
+      FilledButton,
+      'Auto-Fill from ISBN',
+    );
+    await tester.ensureVisible(lookupButton);
+    await tester.tap(lookupButton);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Google Books request limit reached. Check the API quota in Google Cloud or try again later.',
+      ),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox());
+    apiClient.close();
+    googleBooksClient.close();
   });
 
   testWidgets(

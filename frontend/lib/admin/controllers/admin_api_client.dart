@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
@@ -143,6 +143,38 @@ class AdminApiClient {
           );
     return LibraryShelf.fromJson(await _map(response));
   }
+
+  Future<List<LibraryHall>> getHalls() async =>
+      (await _list(await _http.get(_uri('/api/v1/admin/halls'))))
+          .map(LibraryHall.fromJson)
+          .toList();
+
+  Future<LibraryHall> createHall(Map<String, dynamic> payload) async =>
+      LibraryHall.fromJson(
+        await _map(
+          await _http.post(
+            _uri('/api/v1/admin/halls'),
+            headers: _headers,
+            body: jsonEncode(payload),
+          ),
+        ),
+      );
+
+  Future<List<LibrarySeat>> getSeats() async =>
+      (await _list(await _http.get(_uri('/api/v1/admin/seats'))))
+          .map(LibrarySeat.fromJson)
+          .toList();
+
+  Future<LibrarySeat> createSeat(Map<String, dynamic> payload) async =>
+      LibrarySeat.fromJson(
+        await _map(
+          await _http.post(
+            _uri('/api/v1/admin/seats'),
+            headers: _headers,
+            body: jsonEncode(payload),
+          ),
+        ),
+      );
 
   Future<List<Book>> getPendingShelvingBooks() async => (await _list(
     await _http.get(_uri('/api/v1/admin/books/pending-shelving')),
