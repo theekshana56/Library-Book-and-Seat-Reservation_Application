@@ -11,6 +11,7 @@ public record AuthenticatedUser(
         UserRole role,
         String department,
         String userCategory,
+        String vendorCompanyName,
         boolean active,
         String tokenHash
 ) {
@@ -23,6 +24,7 @@ public record AuthenticatedUser(
                 user.getRole(),
                 user.getDepartment(),
                 user.getUserCategory(),
+                user.getVendorCompanyName(),
                 user.isActive(),
                 tokenHash
         );

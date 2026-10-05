@@ -16,6 +16,7 @@ import com.biblione.admin.repository.PublisherProposalRepository;
 import com.biblione.admin.repository.ShelfRepository;
 import com.biblione.admin.repository.StaffTaskRepository;
 import com.biblione.exception.ApiException;
+import com.biblione.auth.security.AuthenticatedUser;
 import com.biblione.model.Book;
 import com.biblione.repository.BookRepository;
 import com.biblione.repository.SeatRepository;
@@ -37,6 +38,9 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AdminServiceTest {
+    private static final AuthenticatedUser ADMIN = new AuthenticatedUser(
+            "admin-1", null, "Admin", "admin@biblione.edu",
+            UserRole.ADMIN, "Library", "ADMIN", null, true, null);
 
     @Mock
     private AdminUserRepository userRepository;
@@ -77,7 +81,8 @@ class AdminServiceTest {
         when(shelfRepository.save(any(Shelf.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(taskRepository.save(any(StaffTask.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        StaffTask completed = service.updateTaskStatus("task-1", new UpdateTaskStatusRequest(TaskStatus.COMPLETED, null));
+        StaffTask completed = service.updateTaskStatus(
+                "task-1", new UpdateTaskStatusRequest(TaskStatus.COMPLETED, null), ADMIN);
 
         assertThat(completed.getStatus()).isEqualTo(TaskStatus.COMPLETED);
         assertThat(book.getAvailableCopies()).isEqualTo(3);
@@ -97,7 +102,8 @@ class AdminServiceTest {
         when(shelfRepository.findByShelfCodeIgnoreCase("CS-204")).thenReturn(Optional.of(shelf));
         when(bookRepository.findById("book-1")).thenReturn(Optional.of(book));
 
-        assertThatThrownBy(() -> service.updateTaskStatus("task-1", new UpdateTaskStatusRequest(TaskStatus.COMPLETED, null)))
+        assertThatThrownBy(() -> service.updateTaskStatus(
+                "task-1", new UpdateTaskStatusRequest(TaskStatus.COMPLETED, null), ADMIN))
                 .isInstanceOf(ApiException.class);
         assertThat(book.getAvailableCopies()).isZero();
     }

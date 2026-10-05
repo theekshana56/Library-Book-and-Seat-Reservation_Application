@@ -12,6 +12,7 @@ public record UserResponse(
         UserRole role,
         String department,
         String userCategory,
+        String vendorCompanyName,
         boolean active
 ) {
     public static UserResponse from(AdminUser user) {
@@ -23,6 +24,7 @@ public record UserResponse(
                 user.getRole(),
                 user.getDepartment(),
                 user.getUserCategory(),
+                user.getVendorCompanyName(),
                 user.isActive()
         );
     }
@@ -36,6 +38,7 @@ public record UserResponse(
                 user.role(),
                 user.department(),
                 user.userCategory(),
+                user.vendorCompanyName(),
                 user.active()
         );
     }

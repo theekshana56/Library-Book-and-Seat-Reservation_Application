@@ -47,8 +47,8 @@ class PublisherProposalServiceTest {
         when(proposalRepository.save(any(PublisherProposal.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
-        PublisherProposal proposal = service.submit(new CreateProposalRequest(
-            "vendor-1", "Spring Boot Essentials", "A. Author", "9781234567890",
+        PublisherProposal proposal = service.submit("vendor-1", new CreateProposalRequest(
+            "Spring Boot Essentials", "A. Author", "9781234567890",
             "Computer Science", "A practical guide", 42.50, 20,
             "https://example.com/cover.jpg"));
 
@@ -58,6 +58,13 @@ class PublisherProposalServiceTest {
         assertThat(proposal.getCreatedAt()).isNotNull();
         verify(proposalRepository).save(any(PublisherProposal.class));
         }
+
+    @Test
+    void vendorCannotReadAnotherVendorsProposals() {
+        assertThatThrownBy(() -> service.getVendorProposals("vendor-2", "vendor-1"))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("only view your own proposals");
+    }
 
     @Test
     void approvalCreatesInventoryBookUnavailableUntilShelved() {
