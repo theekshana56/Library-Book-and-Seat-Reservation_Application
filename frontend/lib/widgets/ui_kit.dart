@@ -248,7 +248,7 @@ class StatusPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        'â—  ${label.toUpperCase()}',
+        label.toUpperCase(),
         style: GoogleFonts.plusJakartaSans(
           color: success ? AppColors.mintText : AppColors.checkedText,
           fontWeight: FontWeight.w800,
