@@ -9,11 +9,13 @@ import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ui_kit.dart';
 import 'book_details_screen.dart';
+import '../user_management/models/user_profile.dart';
 
 class SearchCatalogScreen extends StatefulWidget {
-  const SearchCatalogScreen({super.key, this.apiClient});
+  const SearchCatalogScreen({super.key, this.apiClient, this.userProfile});
 
   final ApiClient? apiClient;
+  final UserProfile? userProfile;
 
   @override
   State<SearchCatalogScreen> createState() => _SearchCatalogScreenState();
@@ -105,13 +107,13 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
             padding: const EdgeInsets.only(top: 10),
             child: Row(
               children: [
-                _headerChip('Term 2025'),
+                _headerChip('Term ${DateTime.now().year}'),
                 const SizedBox(width: 8),
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 16,
                   backgroundColor: Color(0xFF1A9B84),
                   child: Text(
-                    'RW',
+                    AuthInitials.fromName(widget.userProfile?.fullName),
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
@@ -259,6 +261,7 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }
+
                 statusIndex--;
               }
               if (_error != null) {
@@ -572,5 +575,22 @@ class _SearchCatalogScreenState extends State<SearchCatalogScreen> {
       'Dec',
     ];
     return '${m[d.month - 1]} ${d.day}';
+  }
+}
+
+class AuthInitials {
+  static String fromName(String? name) {
+    final parts = (name ?? '')
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return '--';
+    if (parts.length == 1) {
+      return parts.first
+          .substring(0, parts.first.length >= 2 ? 2 : 1)
+          .toUpperCase();
+    }
+    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
 }
