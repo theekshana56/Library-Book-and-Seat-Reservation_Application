@@ -44,4 +44,5 @@ public class Reservation {
     private String status;
     private Instant createdAt;
     private Instant expiresAt;
+    private int loanPeriodDays;
 }
