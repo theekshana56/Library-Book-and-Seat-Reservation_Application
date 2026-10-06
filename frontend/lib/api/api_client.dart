@@ -146,10 +146,13 @@ class ApiClient {
     String currentUserId = demoUserId;
     try {
       final user = await AuthStorage().getUser();
-      if (user != null &&
-          user.universityId != null &&
-          user.universityId!.isNotEmpty) {
-        currentUserId = user.universityId!;
+      if (user != null) {
+        final universityId = user.universityId?.trim();
+        if (universityId != null && universityId.isNotEmpty) {
+          currentUserId = universityId;
+        } else if (user.id.trim().isNotEmpty) {
+          currentUserId = user.id.trim();
+        }
       }
     } catch (_) {}
 

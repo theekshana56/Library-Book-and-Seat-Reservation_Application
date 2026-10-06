@@ -3,17 +3,23 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import 'dart:async';
+
 import '../api/api_client.dart';
 import '../models/book.dart';
 import '../models/models.dart';
+import '../models/seat_booking.dart';
+import '../seat_booking/models/seat_booking_models.dart';
+import '../seat_booking/screens/qr_scanner_screen.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ui_kit.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   final String? userId;
+  final String? alternateUserId;
 
-  const MyBookingsScreen({super.key, this.userId});
+  const MyBookingsScreen({super.key, this.userId, this.alternateUserId});
 
   @override
   State<MyBookingsScreen> createState() => _MyBookingsScreenState();
@@ -22,14 +28,27 @@ class MyBookingsScreen extends StatefulWidget {
 class _MyBookingsScreenState extends State<MyBookingsScreen> {
   final _api = ApiClient();
   UserBookings? _data;
+  List<SeatBooking> _seatBookings = const [];
   String? _error;
   bool _loading = true;
   String _tab = 'All';
+  Timer? _countdownTimer;
 
   @override
   void initState() {
     super.initState();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
     _load();
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -38,20 +57,28 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       _error = null;
     });
     try {
-      var data = await _api.getBookings(widget.userId);
-      final userId = widget.userId;
+      final primaryUserId = widget.userId ?? ApiClient.demoUserId;
+      final alternateUserId = widget.alternateUserId?.trim();
+
+      var data = await _api.getBookings(primaryUserId);
+      var seatBookings = await _api.getUserSeatBookings(userId: primaryUserId);
+
       if (_hasNoBookings(data) &&
-          userId != null &&
-          userId.toLowerCase().endsWith('v')) {
-        final fallbackData = await _api.getBookings(
-          userId.substring(0, userId.length - 1),
-        );
-        if (!_hasNoBookings(fallbackData)) {
-          data = fallbackData;
-        }
+          alternateUserId != null &&
+          alternateUserId.isNotEmpty &&
+          alternateUserId != primaryUserId) {
+        data = await _api.getBookings(alternateUserId);
       }
+      if (seatBookings.isEmpty &&
+          alternateUserId != null &&
+          alternateUserId.isNotEmpty &&
+          alternateUserId != primaryUserId) {
+        seatBookings = await _api.getUserSeatBookings(userId: alternateUserId);
+      }
+
       setState(() {
         _data = data;
+        _seatBookings = seatBookings;
         _loading = false;
       });
     } catch (e) {
@@ -65,10 +92,17 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   bool _hasNoBookings(UserBookings data) =>
       data.reservations.isEmpty && data.seatHolds.isEmpty && data.loans.isEmpty;
 
+  int get _activeSeatBookingCount => _seatBookings
+      .where(
+        (booking) =>
+            booking.status == 'RESERVED' || booking.status == 'CHECKED_IN',
+      )
+      .length;
+
   @override
   Widget build(BuildContext context) {
     final data = _data;
-    final active = data?.activeCount ?? 0;
+    final active = (data?.activeCount ?? 0) + _activeSeatBookingCount;
     return Column(
       children: [
         Container(
@@ -195,7 +229,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                 _tabChip('Books', extra: '(${data?.reservations.length ?? 0})'),
                 _tabChip(
                   'Desks & Seats',
-                  extra: '(${data?.seatHolds.length ?? 0})',
+                  extra:
+                      '(${(data?.seatHolds.length ?? 0) + _seatBookings.length})',
                 ),
                 _tabChip('History', extra: '(${data?.historyCount ?? 4})'),
               ],
@@ -224,6 +259,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                       if (_showBooks)
                         ...?data?.reservations.map(_reservationCard),
                       if (_showSeats) ...?data?.seatHolds.map(_seatCard),
+                      if (_showSeats) ..._seatBookings.map(_seatBookingCard),
                       if (_showBooks && (data?.loans.isNotEmpty ?? false)) ...[
                         const SizedBox(height: 8),
                         Text(
@@ -295,8 +331,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         (r.status == 'READY_FOR_PICKUP' || r.status == 'CONFIRMED');
     final remaining = deadline.difference(DateTime.now());
     final windowLabel = canManage
-        ? 'Editable for ${remaining.inHours}h ${remaining.inMinutes.remainder(60)}m'
-        : 'Change window closed';
+        ? 'Hold expires in ${remaining.inHours}h ${remaining.inMinutes.remainder(60)}m'
+        : 'Hold expired';
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(14),
@@ -332,6 +368,45 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: canManage
+                  ? const Color(0xFFFFF4E5)
+                  : const Color(0xFFF1F3F5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  canManage
+                      ? Icons.hourglass_bottom_rounded
+                      : Icons.hourglass_disabled_rounded,
+                  size: 18,
+                  color: canManage
+                      ? const Color(0xFFC2410C)
+                      : AppColors.textMuted,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    canManage
+                        ? 'Book hold countdown: ${_countdownLabel(remaining)} remaining'
+                        : 'Book hold countdown finished',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: canManage
+                          ? const Color(0xFFC2410C)
+                          : AppColors.textMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -807,8 +882,291 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     );
   }
 
+  Widget _seatBookingCard(SeatBooking booking) {
+    final status = booking.status.replaceAll('_', ' ');
+    final date = DateTime.tryParse(booking.bookingDate);
+    final dateLabel = date == null
+        ? booking.bookingDate
+        : DateFormat('EEE, d MMM yyyy').format(date);
+    final start = _formatBookingTime(booking.startTime);
+    final end = _formatBookingTime(booking.endTime);
+    final isCancelled = booking.status == 'CANCELLED';
+    final cancellationDeadline = _bookingStart(booking)
+        .subtract(const Duration(hours: 1));
+    final canCancel =
+        booking.status == 'RESERVED' &&
+        DateTime.now().isBefore(cancellationDeadline);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.cardShadow,
+            blurRadius: 14,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              StatusPill(label: status, success: !isCancelled),
+              const Spacer(),
+              Text(
+                'Desk booking',
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.textMuted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: AppColors.cyanAlert,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.event_seat_outlined,
+                  color: AppColors.emerald,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Seat ${booking.seatCode}',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$dateLabel · $start–$end',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: AppColors.textMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Booking ID: ${booking.id}',
+            style: GoogleFonts.plusJakartaSans(
+              color: AppColors.textMuted,
+              fontSize: 11,
+            ),
+          ),
+          if (booking.status == 'RESERVED' && !isCancelled) ...[
+            const SizedBox(height: 8),
+            Text(
+              canCancel
+                  ? 'Cancel before ${_formatDateTime(cancellationDeadline)} (one hour before start)'
+                  : 'Cancellation closed after ${_formatDateTime(cancellationDeadline)}',
+              style: GoogleFonts.plusJakartaSans(
+                color: canCancel ? AppColors.textMuted : Colors.redAccent,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          if (booking.status == 'CHECKED_IN') ...[
+            const SizedBox(height: 8),
+            Text(
+              'Cancellation unavailable: this seat has already been checked in.',
+              style: GoogleFonts.plusJakartaSans(
+                color: AppColors.textMuted,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          if (canCancel) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _scanSeatQr(booking),
+                    icon: const Icon(Icons.qr_code_scanner, size: 18),
+                    label: const Text('Scan QR to Check In'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.navy,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed: () => _cancelSeatBooking(booking),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                    side: const BorderSide(color: Colors.redAccent),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 13,
+                    ),
+                  ),
+                  child: const Icon(Icons.event_busy_outlined, size: 18),
+                ),
+              ],
+            ),
+          ],
+          if (booking.status == 'RESERVED' && !canCancel) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _scanSeatQr(booking),
+                icon: const Icon(Icons.qr_code_scanner, size: 18),
+                label: const Text('Scan QR to Check In'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.navy,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _scanSeatQr(SeatBooking booking) async {
+    final seat = SeatMapSeat(
+      id: '',
+      seatCode: booking.seatCode,
+      hallCode: '',
+      floor: '',
+      zone: '',
+      hasPowerOutlet: false,
+      acousticsDb: 0,
+      features: const [],
+      available: false,
+    );
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => QRScannerScreen(
+          bookingId: booking.id,
+          seatNumber: booking.seatCode,
+          seat: seat,
+        ),
+      ),
+    );
+    if (mounted) {
+      await _load();
+    }
+  }
+
+  DateTime _bookingStart(SeatBooking booking) {
+    final date = DateTime.tryParse(booking.bookingDate);
+    final time = DateFormat('HH:mm:ss').tryParse(booking.startTime);
+    if (date == null || time == null) {
+      return DateTime.fromMillisecondsSinceEpoch(0);
+    }
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+      time.second,
+    );
+  }
+
+  Future<void> _cancelSeatBooking(SeatBooking booking) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cancel seat booking?'),
+        content: Text(
+          'Cancel seat ${booking.seatCode}? This is allowed only until one hour before the start time.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep booking'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Cancel booking'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await _api.cancelSeatBooking(booking.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Seat booking cancelled.')));
+      await _load();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
+  String _formatBookingTime(String value) {
+    try {
+      return DateFormat('h:mm a').format(DateFormat('HH:mm:ss').parse(value));
+    } catch (_) {
+      return value;
+    }
+  }
+
+  String _formatDateTime(DateTime value) {
+    return DateFormat('EEE, d MMM · h:mm a').format(value);
+  }
+
+  String _countdownLabel(Duration duration) {
+    final safeDuration = duration.isNegative ? Duration.zero : duration;
+    final days = safeDuration.inDays;
+    final hours = safeDuration.inHours.remainder(24);
+    final minutes = safeDuration.inMinutes.remainder(60);
+    return '${days}d ${hours}h ${minutes}m';
+  }
+
   Widget _loanCard(Loan loan) {
-    final days = loan.dueDate.difference(DateTime.now()).inDays;
+    final remaining = loan.dueDate.difference(DateTime.now());
+    final isOverdue = remaining.isNegative;
+    final absoluteRemaining = remaining.abs();
+    final days = absoluteRemaining.inDays;
+    final hours = absoluteRemaining.inHours.remainder(24);
+    final minutes = absoluteRemaining.inMinutes.remainder(60);
+    final countdown = '$days d $hours h $minutes m';
     return Container(
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(12),
@@ -831,10 +1189,13 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                   ),
                 ),
                 Text(
-                  'Due in ${days.abs()} days (${DateFormat('MMM d').format(loan.dueDate.toLocal())})',
+                  isOverdue
+                      ? 'Overdue by $countdown (${DateFormat('MMM d').format(loan.dueDate.toLocal())})'
+                      : 'Returns in $countdown (${DateFormat('MMM d').format(loan.dueDate.toLocal())})',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 12,
-                    color: AppColors.textMuted,
+                    color: isOverdue ? Colors.redAccent : AppColors.textMuted,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 6),

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../seat_booking/models/seat_booking_models.dart';
 import '../../seat_booking/screens/review_booking_screen.dart';
+import '../../seat_booking/screens/seat_map_screen.dart';
 import '../../theme/app_colors.dart';
 import '../models/seat_recommendation.dart';
 
@@ -78,6 +79,27 @@ class _RankedResultsScreenState extends State<RankedResultsScreen> {
                       'Under 30 dB',
                       'Fast Charging',
                     ].map((filter) => _filterChip(filter)).toList(),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: OutlinedButton.icon(
+                      onPressed: _openSeatMap,
+                      icon: const Icon(Icons.map_outlined, size: 18),
+                      label: const Text('View Map'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.emerald,
+                        side: const BorderSide(color: AppColors.emerald),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        textStyle: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   if (matches.isEmpty)
@@ -164,6 +186,23 @@ class _RankedResultsScreenState extends State<RankedResultsScreen> {
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       padding: const EdgeInsets.symmetric(horizontal: 2),
+    );
+  }
+
+  void _openSeatMap() {
+    final startTime = DateFormat('HH:mm:ss').parse(widget.request.startTime);
+    final endTime = startTime.add(
+      Duration(minutes: widget.request.durationMinutes),
+    );
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SeatMapScreen(
+          initialDate: widget.request.date,
+          initialStart: TimeOfDay.fromDateTime(startTime),
+          initialEnd: TimeOfDay.fromDateTime(endTime),
+        ),
+      ),
     );
   }
 
