@@ -121,6 +121,9 @@ public class BookReservationService {
 
         Instant now = Instant.now();
         int holdHours = book.getExpressHoldHours() != null ? book.getExpressHoldHours() : 24;
+        int loanPeriodDays = request.getLoanPeriodDays() == null
+                ? 14
+                : request.getLoanPeriodDays();
 
         Reservation reservation = Reservation.builder()
                 .holdIdCode(generateHoldId(book))
@@ -141,9 +144,23 @@ public class BookReservationService {
                 .status("READY_FOR_PICKUP")
                 .createdAt(now)
                 .expiresAt(now.plus(holdHours, ChronoUnit.HOURS))
+                .loanPeriodDays(loanPeriodDays)
                 .build();
 
         reservation = reservationRepository.save(reservation);
+
+        loanRepository.save(Loan.builder()
+                .userId(userId)
+                .bookId(book.getId())
+                .title(book.getTitle())
+                .author(book.getAuthor())
+                .coverImageUrl(book.getCoverImageUrl())
+                .borrowedAt(now)
+                .dueDate(now.plus(loanPeriodDays, ChronoUnit.DAYS))
+                .renewCount(0)
+                .loanLimit(DEFAULT_LOAN_LIMIT)
+                .status("ACTIVE")
+                .build());
         
         try {
             notificationService.createSystemNotification(userId, "Book Ready for Pickup", 

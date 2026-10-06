@@ -18,6 +18,7 @@
   final String status;
   final DateTime createdAt;
   final DateTime expiresAt;
+  final int loanPeriodDays;
 
   const Reservation({
     required this.id,
@@ -39,6 +40,7 @@
     required this.status,
     required this.createdAt,
     required this.expiresAt,
+    required this.loanPeriodDays,
   });
 
   factory Reservation.fromJson(Map<String, dynamic> json) {
@@ -58,11 +60,18 @@
       format: json['format'] ?? 'Print Copy',
       priorityHold: json['priorityHold'] == true,
       pickupDesk: json['pickupDesk'] ?? 'Central Circulation Desk',
-      pickupDeskDetail: json['pickupDeskDetail'] ?? 'Level 1 • East Atrium Entrance',
+      pickupDeskDetail:
+          json['pickupDeskDetail'] ?? 'Level 1 • East Atrium Entrance',
       status: json['status'] ?? '',
-      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
-      expiresAt: DateTime.tryParse(json['expiresAt']?.toString() ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
+          DateTime.now(),
+      expiresAt:
+          DateTime.tryParse(json['expiresAt']?.toString() ?? '') ??
           DateTime.now().add(const Duration(hours: 24)),
+      loanPeriodDays: ((json['loanPeriodDays'] as num?)?.toInt() ?? 0) >= 3
+          ? (json['loanPeriodDays'] as num).toInt()
+          : 14,
     );
   }
 }
@@ -95,8 +104,12 @@ class SeatHold {
       seatName: json['seatName'] ?? '',
       zone: json['zone'] ?? '',
       slotLabel: json['slotLabel'] ?? '',
-      amenities: (json['amenities'] as List?)?.map((e) => e.toString()).toList() ?? const [],
-      checkInBy: DateTime.tryParse(json['checkInBy']?.toString() ?? '') ?? DateTime.now(),
+      amenities:
+          (json['amenities'] as List?)?.map((e) => e.toString()).toList() ??
+          const [],
+      checkInBy:
+          DateTime.tryParse(json['checkInBy']?.toString() ?? '') ??
+          DateTime.now(),
       status: json['status'] ?? '',
     );
   }
@@ -104,6 +117,7 @@ class SeatHold {
 
 class Loan {
   final String id;
+  final String bookId;
   final String title;
   final String author;
   final String coverImageUrl;
@@ -115,6 +129,7 @@ class Loan {
 
   const Loan({
     required this.id,
+    required this.bookId,
     required this.title,
     required this.author,
     required this.coverImageUrl,
@@ -128,11 +143,16 @@ class Loan {
   factory Loan.fromJson(Map<String, dynamic> json) {
     return Loan(
       id: json['id']?.toString() ?? '',
+      bookId: json['bookId']?.toString() ?? '',
       title: json['title'] ?? '',
       author: json['author'] ?? '',
       coverImageUrl: json['coverImageUrl'] ?? '',
-      borrowedAt: DateTime.tryParse(json['borrowedAt']?.toString() ?? '') ?? DateTime.now(),
-      dueDate: DateTime.tryParse(json['dueDate']?.toString() ?? '') ?? DateTime.now(),
+      borrowedAt:
+          DateTime.tryParse(json['borrowedAt']?.toString() ?? '') ??
+          DateTime.now(),
+      dueDate:
+          DateTime.tryParse(json['dueDate']?.toString() ?? '') ??
+          DateTime.now(),
       renewCount: json['renewCount'] ?? 0,
       loanLimit: json['loanLimit'] ?? 5,
       status: json['status'] ?? 'ACTIVE',
