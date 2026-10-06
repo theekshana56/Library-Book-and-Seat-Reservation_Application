@@ -254,6 +254,24 @@ public class SeatBookingService {
             return booking;
         }
 
+        LocalDateTime bookingStart =
+                LocalDateTime.of(
+                        booking.getBookingDate(),
+                        booking.getStartTime()
+                );
+
+        if (
+                !LocalDateTime.now()
+                        .plusHours(1)
+                        .isBefore(bookingStart)
+        ) {
+
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "Seat bookings can only be cancelled at least one hour before the start time"
+            );
+        }
+
         booking.setStatus(
                 SeatBookingStatus.CANCELLED
         );

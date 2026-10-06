@@ -5,9 +5,7 @@ import '../api/seat_booking_api.dart';
 import '../models/seat_booking_models.dart';
 import 'qr_scanner_screen.dart';
 
-class ActiveBookingScreen
-    extends StatefulWidget {
-
+class ActiveBookingScreen extends StatefulWidget {
   final String bookingId;
 
   final SeatMapSeat seat;
@@ -19,180 +17,109 @@ class ActiveBookingScreen
   });
 
   @override
-  State<ActiveBookingScreen>
-  createState() =>
-      _ActiveBookingScreenState();
+  State<ActiveBookingScreen> createState() => _ActiveBookingScreenState();
 }
 
-class _ActiveBookingScreenState
-    extends State<
-      ActiveBookingScreen
-    > {
+class _ActiveBookingScreenState extends State<ActiveBookingScreen> {
+  static const _green = Color(0xFF005F4B);
 
-  static const _green =
-      Color(0xFF008C72);
-
-  final SeatBookingApi _api =
-      SeatBookingApi();
+  final SeatBookingApi _api = SeatBookingApi();
 
   SeatBookingRecord? _booking;
 
   bool _loading = true;
 
-  bool _actionLoading =
-      false;
+  bool _actionLoading = false;
 
   String? _error;
 
   @override
   void initState() {
-
     super.initState();
 
     _load();
   }
 
   Future<void> _load() async {
-
     setState(() {
       _loading = true;
       _error = null;
     });
 
     try {
-
-      final booking =
-          await _api
-              .getBooking(
-        widget.bookingId,
-      );
+      final booking = await _api.getBooking(widget.bookingId);
 
       if (!mounted) {
         return;
       }
 
       setState(() {
-        _booking =
-            booking;
+        _booking = booking;
       });
-
     } catch (e) {
-
       if (!mounted) {
         return;
       }
 
       setState(() {
-        _error =
-            e.toString();
+        _error = e.toString();
       });
-
     } finally {
-
       if (mounted) {
-
         setState(() {
-          _loading =
-              false;
+          _loading = false;
         });
       }
     }
   }
 
-  Future<void>
-  _scanQr() async {
-
-    final booking =
-        _booking;
+  Future<void> _scanQr() async {
+    final booking = _booking;
 
     if (booking == null) {
       return;
     }
 
-    await Navigator
-        .of(context)
-        .push(
-
+    await Navigator.of(context).push(
       MaterialPageRoute(
-        builder:
-            (_) =>
-                QRScannerScreen(
+        builder: (_) => QRScannerScreen(
+          bookingId: booking.id,
 
-          bookingId:
-              booking.id,
-
-          seatNumber:
-              booking
-                  .seatCode,
+          seatNumber: booking.seatCode,
           seat: widget.seat,
         ),
       ),
     );
 
     if (mounted) {
-
       await _load();
     }
   }
 
-  Future<void>
-  _cancel() async {
-
-    final booking =
-        _booking;
+  Future<void> _cancel() async {
+    final booking = _booking;
 
     if (booking == null) {
       return;
     }
 
-    final yes =
-        await showDialog<
-          bool
-        >(
+    final yes = await showDialog<bool>(
+      context: context,
 
-      context:
-          context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel Booking?'),
 
-      builder:
-          (context) =>
-              AlertDialog(
-
-        title:
-            const Text(
-          'Cancel Booking?',
-        ),
-
-        content:
-            Text(
-          'Cancel the reservation for seat ${booking.seatCode}?',
-        ),
+        content: Text('Cancel the reservation for seat ${booking.seatCode}?'),
 
         actions: [
-
           TextButton(
-            onPressed:
-                () =>
-                    Navigator.pop(
-              context,
-              false,
-            ),
-            child:
-                const Text(
-              'Keep Booking',
-            ),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Booking'),
           ),
 
           FilledButton(
-            onPressed:
-                () =>
-                    Navigator.pop(
-              context,
-              true,
-            ),
-            child:
-                const Text(
-              'Cancel Booking',
-            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Cancel Booking'),
           ),
         ],
       ),
@@ -203,129 +130,65 @@ class _ActiveBookingScreenState
     }
 
     setState(() {
-      _actionLoading =
-          true;
+      _actionLoading = true;
     });
 
     try {
-
-      final updated =
-          await _api
-              .cancelBooking(
-        booking.id,
-      );
+      final updated = await _api.cancelBooking(booking.id);
 
       if (!mounted) {
         return;
       }
 
       setState(() {
-        _booking =
-            updated;
+        _booking = updated;
       });
 
-      ScaffoldMessenger
-          .of(context)
-          .showSnackBar(
-
-        const SnackBar(
-          content:
-              Text(
-            'Booking cancelled.',
-          ),
-        ),
-      );
-
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Booking cancelled.')));
     } catch (e) {
-
       if (!mounted) {
         return;
       }
 
-      ScaffoldMessenger
-          .of(context)
-          .showSnackBar(
-
-        SnackBar(
-          content:
-              Text(
-            e.toString(),
-          ),
-          backgroundColor:
-              Colors.red,
-        ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
       );
-
     } finally {
-
       if (mounted) {
-
         setState(() {
-          _actionLoading =
-              false;
+          _actionLoading = false;
         });
       }
     }
   }
 
-  Future<void>
-  _delete() async {
-
-    final booking =
-        _booking;
+  Future<void> _delete() async {
+    final booking = _booking;
 
     if (booking == null) {
       return;
     }
 
-    final yes =
-        await showDialog<
-          bool
-        >(
+    final yes = await showDialog<bool>(
+      context: context,
 
-      context:
-          context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Booking Record?'),
 
-      builder:
-          (context) =>
-              AlertDialog(
-
-        title:
-            const Text(
-          'Remove Booking Record?',
-        ),
-
-        content:
-            const Text(
+        content: const Text(
           'This removes this cancelled booking record from the database.',
         ),
 
         actions: [
-
           TextButton(
-            onPressed:
-                () =>
-                    Navigator.pop(
-              context,
-              false,
-            ),
-            child:
-                const Text(
-              'No',
-            ),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No'),
           ),
 
           FilledButton(
-            onPressed:
-                () =>
-                    Navigator.pop(
-              context,
-              true,
-            ),
-            child:
-                const Text(
-              'Remove',
-            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remove'),
           ),
         ],
       ),
@@ -336,527 +199,248 @@ class _ActiveBookingScreenState
     }
 
     setState(() {
-      _actionLoading =
-          true;
+      _actionLoading = true;
     });
 
     try {
-
-      await _api
-          .deleteBooking(
-        booking.id,
-      );
+      await _api.deleteBooking(booking.id);
 
       if (!mounted) {
         return;
       }
 
-      Navigator
-          .of(context)
-          .popUntil(
-        (route) =>
-            route.isFirst,
-      );
-
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
-
       if (!mounted) {
         return;
       }
 
-      ScaffoldMessenger
-          .of(context)
-          .showSnackBar(
-
-        SnackBar(
-          content:
-              Text(
-            e.toString(),
-          ),
-          backgroundColor:
-              Colors.red,
-        ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
       );
-
     } finally {
-
       if (mounted) {
-
         setState(() {
-          _actionLoading =
-              false;
+          _actionLoading = false;
         });
       }
     }
   }
 
-  String _prettyDate(
-    String value,
-  ) {
+  String _prettyDate(String value) {
+    final parsed = DateTime.tryParse(value);
 
-    final parsed =
-        DateTime.tryParse(
-      value,
-    );
-
-    return parsed == null
-        ? value
-        : DateFormat(
-            'dd MMM yyyy',
-          ).format(
-            parsed,
-          );
+    return parsed == null ? value : DateFormat('dd MMM yyyy').format(parsed);
   }
 
-  String _prettyTime(
-    String value,
-  ) {
-
+  String _prettyTime(String value) {
     try {
-
-      return DateFormat(
-        'h:mm a',
-      ).format(
-
-        DateFormat(
-          'HH:mm:ss',
-        ).parse(
-          value,
-        ),
-      );
-
+      return DateFormat('h:mm a').format(DateFormat('HH:mm:ss').parse(value));
     } catch (_) {
-
       return value;
     }
   }
 
-  Color _statusColor(
-    String status,
-  ) {
-
-    switch (
-      status.toUpperCase()
-    ) {
-
+  Color _statusColor(String status) {
+    switch (status.toUpperCase()) {
       case 'CHECKED_IN':
-
-        return const Color(
-          0xFF0A7B61,
-        );
+        return const Color(0xFF0A7B61);
 
       case 'CANCELLED':
-
         return Colors.redAccent;
 
       default:
-
         return _green;
     }
   }
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
-
+  Widget build(BuildContext context) {
     return Scaffold(
-
-      backgroundColor:
-          const Color(
-        0xFFF8FAFA,
-      ),
+      backgroundColor: const Color(0xFFF8FAFA),
 
       appBar: AppBar(
+        backgroundColor: const Color(0xFF073342),
 
-        backgroundColor:
-            const Color(
-          0xFF073342,
-        ),
+        foregroundColor: Colors.white,
 
-        foregroundColor:
-            Colors.white,
-
-        title:
-            const Text(
+        title: const Text(
           'My Seat Booking',
-          style:
-              TextStyle(
-            fontWeight:
-                FontWeight
-                    .w800,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w800),
         ),
 
         actions: [
-
           IconButton(
-            onPressed:
-                _loading
-                    ? null
-                    : _load,
-            icon:
-                const Icon(
-              Icons.refresh,
-            ),
+            onPressed: _loading ? null : _load,
+            icon: const Icon(Icons.refresh),
           ),
         ],
       ),
 
-      body:
-          SafeArea(
-        child:
-            _body(),
-      ),
+      body: SafeArea(child: _body()),
     );
   }
 
   Widget _body() {
-
     if (_loading) {
-
-      return const Center(
-        child:
-            CircularProgressIndicator(
-          color:
-              _green,
-        ),
-      );
+      return const Center(child: CircularProgressIndicator(color: _green));
     }
 
-    if (
-      _error != null ||
-          _booking == null
-    ) {
-
+    if (_error != null || _booking == null) {
       return Center(
-
         child: Padding(
-
-          padding:
-              const EdgeInsets
-                  .all(
-            24,
-          ),
+          padding: const EdgeInsets.all(24),
 
           child: Column(
-
-            mainAxisSize:
-                MainAxisSize
-                    .min,
+            mainAxisSize: MainAxisSize.min,
 
             children: [
-
               const Icon(
-                Icons
-                    .error_outline,
-                color:
-                    Colors
-                        .redAccent,
-                size:
-                    42,
+                Icons.error_outline,
+                color: Colors.redAccent,
+                size: 42,
               ),
 
-              const SizedBox(
-                height:
-                    10,
-              ),
+              const SizedBox(height: 10),
 
-              Text(
-                _error ??
-                    'Booking not found.',
-                textAlign:
-                    TextAlign
-                        .center,
-              ),
+              Text(_error ?? 'Booking not found.', textAlign: TextAlign.center),
 
-              const SizedBox(
-                height:
-                    14,
-              ),
+              const SizedBox(height: 14),
 
-              OutlinedButton(
-                onPressed:
-                    _load,
-                child:
-                    const Text(
-                  'Try Again',
-                ),
-              ),
+              OutlinedButton(onPressed: _load, child: const Text('Try Again')),
             ],
           ),
         ),
       );
     }
 
-    final booking =
-        _booking!;
+    final booking = _booking!;
 
-    final status =
-        booking.status
-            .toUpperCase();
+    final status = booking.status.toUpperCase();
 
-    final canCheckIn =
-        status ==
-        'RESERVED';
+    final canCheckIn = status == 'RESERVED';
 
     final canCancel =
-        status ==
-        'RESERVED';
+        status == 'RESERVED' &&
+        DateTime.now().isBefore(
+          _bookingStart(_booking!).subtract(const Duration(hours: 1)),
+        );
 
-    final canDelete =
-        status ==
-        'CANCELLED';
+    final canDelete = status == 'CANCELLED';
 
     return ListView(
-
-      padding:
-          const EdgeInsets
-              .fromLTRB(
-        18,
-        20,
-        18,
-        30,
-      ),
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 30),
 
       children: [
-
         Row(
           children: [
-
             const Expanded(
-              child:
-                  Text(
+              child: Text(
                 'Active Booking',
-                style:
-                    TextStyle(
-                  color:
-                      Color(
-                    0xFF0A3443,
-                  ),
-                  fontSize:
-                      24,
-                  fontWeight:
-                      FontWeight
-                          .w800,
+                style: TextStyle(
+                  color: Color(0xFF0A3443),
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
 
             Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
 
-              padding:
-                  const EdgeInsets
-                      .symmetric(
-                horizontal:
-                    10,
-                vertical:
-                    6,
-              ),
+              decoration: BoxDecoration(
+                color: _statusColor(status).withValues(alpha: 0.10),
 
-              decoration:
-                  BoxDecoration(
-
-                color:
-                    _statusColor(
-                      status,
-                    ).withValues(
-                      alpha:
-                          0.10,
-                    ),
-
-                borderRadius:
-                    BorderRadius
-                        .circular(
-                  20,
-                ),
+                borderRadius: BorderRadius.circular(20),
               ),
 
               child: Text(
+                status.replaceAll('_', ' '),
 
-                status.replaceAll(
-                  '_',
-                  ' ',
-                ),
-
-                style:
-                    TextStyle(
-                  color:
-                      _statusColor(
-                    status,
-                  ),
-                  fontSize:
-                      10,
-                  fontWeight:
-                      FontWeight
-                          .w800,
+                style: TextStyle(
+                  color: _statusColor(status),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
           ],
         ),
 
-        const SizedBox(
-          height: 18,
-        ),
+        const SizedBox(height: 18),
 
         Container(
+          padding: const EdgeInsets.all(16),
 
-          padding:
-              const EdgeInsets
-                  .all(
-            16,
-          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
 
-          decoration:
-              BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
 
-            color:
-                Colors.white,
-
-            borderRadius:
-                BorderRadius
-                    .circular(
-              18,
-            ),
-
-            border:
-                Border.all(
-              color:
-                  const Color(
-                0xFFE1E8E7,
-              ),
-            ),
+            border: Border.all(color: const Color(0xFFE1E8E7)),
           ),
 
           child: Column(
             children: [
-
               Container(
+                padding: const EdgeInsets.all(14),
 
-                padding:
-                    const EdgeInsets
-                        .all(
-                  14,
-                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEDF8F4),
 
-                decoration:
-                    BoxDecoration(
-
-                  color:
-                      const Color(
-                    0xFFEDF8F4,
-                  ),
-
-                  borderRadius:
-                      BorderRadius
-                          .circular(
-                    14,
-                  ),
+                  borderRadius: BorderRadius.circular(14),
                 ),
 
                 child: Row(
                   children: [
-
                     Container(
+                      width: 58,
+                      height: 58,
 
-                      width:
-                          58,
-                      height:
-                          58,
+                      alignment: Alignment.center,
 
-                      alignment:
-                          Alignment
-                              .center,
+                      decoration: BoxDecoration(
+                        color: _green,
 
-                      decoration:
-                          BoxDecoration(
-
-                        color:
-                            _green,
-
-                        borderRadius:
-                            BorderRadius
-                                .circular(
-                          12,
-                        ),
+                        borderRadius: BorderRadius.circular(12),
                       ),
 
                       child: Text(
+                        booking.seatCode,
 
-                        booking
-                            .seatCode,
-
-                        style:
-                            const TextStyle(
-                          color:
-                              Colors
-                                  .white,
-                          fontSize:
-                              17,
-                          fontWeight:
-                              FontWeight
-                                  .w800,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ),
 
-                    const SizedBox(
-                      width:
-                          13,
-                    ),
+                    const SizedBox(width: 13),
 
                     Expanded(
-                      child:
-                          Column(
-
-                        crossAxisAlignment:
-                            CrossAxisAlignment
-                                .start,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
 
                         children: [
-
                           Text(
                             '${widget.seat.floor} ${widget.seat.zone}',
-                            style:
-                                const TextStyle(
-                              color:
-                                  Color(
-                                0xFF173B46,
-                              ),
-                              fontSize:
-                                  15,
-                              fontWeight:
-                                  FontWeight
-                                      .w800,
+                            style: const TextStyle(
+                              color: Color(0xFF173B46),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
 
-                          const SizedBox(
-                            height:
-                                4,
-                          ),
+                          const SizedBox(height: 4),
 
                           Text(
-                            widget
-                                    .seat
-                                    .features
-                                    .isEmpty
+                            widget.seat.features.isEmpty
                                 ? 'Reading room seat'
-                                : widget
-                                    .seat
-                                    .features
-                                    .join(
-                                      ' • ',
-                                    ),
-                            style:
-                                const TextStyle(
-                              color:
-                                  Color(
-                                0xFF78868A,
-                              ),
-                              fontSize:
-                                  10,
+                                : widget.seat.features.join(' • '),
+                            style: const TextStyle(
+                              color: Color(0xFF78868A),
+                              fontSize: 10,
                             ),
                           ),
                         ],
@@ -866,330 +450,186 @@ class _ActiveBookingScreenState
                 ),
               ),
 
-              const SizedBox(
-                height:
-                    18,
-              ),
+              const SizedBox(height: 18),
 
               _row(
-                Icons
-                    .calendar_today_outlined,
+                Icons.calendar_today_outlined,
                 'Date',
-                _prettyDate(
-                  booking
-                      .bookingDate,
-                ),
+                _prettyDate(booking.bookingDate),
               ),
 
-              const Divider(
-                height:
-                    26,
-              ),
+              const Divider(height: 26),
 
               _row(
-                Icons
-                    .access_time,
+                Icons.access_time,
                 'Time',
                 '${_prettyTime(booking.startTime)} – '
-                '${_prettyTime(booking.endTime)}',
+                    '${_prettyTime(booking.endTime)}',
               ),
 
-              const Divider(
-                height:
-                    26,
-              ),
+              const Divider(height: 26),
 
               _row(
-                Icons
-                    .confirmation_number_outlined,
+                Icons.confirmation_number_outlined,
                 'Booking ID',
                 booking.id,
               ),
 
-              if (
-                booking
-                        .checkInTime !=
-                    null
-              ) ...[
+              if (booking.checkInTime != null) ...[
+                const Divider(height: 26),
 
-                const Divider(
-                  height:
-                      26,
-                ),
-
-                _row(
-                  Icons.login,
-                  'Checked in',
-                  booking
-                      .checkInTime!,
-                ),
+                _row(Icons.login, 'Checked in', booking.checkInTime!),
               ],
             ],
           ),
         ),
 
-        const SizedBox(
-          height: 18,
-        ),
+        const SizedBox(height: 18),
 
-        if (
-          status ==
-              'CHECKED_IN'
-        )
-
+        if (status == 'CHECKED_IN')
           _message(
-            icon:
-                Icons
-                    .check_circle_outline,
-            text:
-                'Check-in completed successfully. Your study session is active.',
-            color:
-                const Color(
-              0xFFEAF7F3,
-            ),
+            icon: Icons.check_circle_outline,
+            text: 'Check-in completed successfully. Your study session is active.',
+            color: const Color(0xFFEAF7F3),
           )
-
-        else if (
-          status ==
-              'CANCELLED'
-        )
-
+        else if (status == 'CANCELLED')
           _message(
-            icon:
-                Icons
-                    .cancel_outlined,
-            text:
-                'This booking has been cancelled and the seat is available again.',
-            color:
-                const Color(
-              0xFFFDECEC,
-            ),
+            icon: Icons.cancel_outlined,
+            text: 'This booking has been cancelled and the seat is available again.',
+            color: const Color(0xFFFDECEC),
           )
-
         else
-
           _message(
-            icon:
-                Icons
-                    .qr_code_scanner,
-            text:
-                'Scan the QR code attached to your reserved desk to complete check-in.',
-            color:
-                const Color(
-              0xFFEAF7F3,
-            ),
+            icon: Icons.qr_code_scanner,
+            text: 'Scan the QR code attached to your reserved desk to complete check-in.',
+            color: const Color(0xFFEAF7F3),
           ),
 
-        const SizedBox(
-          height: 20,
-        ),
+        const SizedBox(height: 20),
 
         if (canCheckIn)
-
           SizedBox(
-
             height: 52,
 
-            child:
-                FilledButton
-                    .icon(
+            child: FilledButton.icon(
+              onPressed: _actionLoading ? null : _scanQr,
 
-              onPressed:
-                  _actionLoading
-                      ? null
-                      : _scanQr,
+              style: FilledButton.styleFrom(
+                backgroundColor: _green,
 
-              style:
-                  FilledButton
-                      .styleFrom(
-
-                backgroundColor:
-                    _green,
-
-                shape:
-                    RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius
-                          .circular(
-                    12,
-                  ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
 
-              icon:
-                  const Icon(
-                Icons
-                    .qr_code_scanner,
-              ),
+              icon: const Icon(Icons.qr_code_scanner),
 
-              label:
-                  const Text(
+              label: const Text(
                 'Check in via Desk QR',
-                style:
-                    TextStyle(
-                  fontWeight:
-                      FontWeight
-                          .w800,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
           ),
 
         if (canCancel) ...[
-
-          const SizedBox(
-            height: 10,
-          ),
+          const SizedBox(height: 10),
 
           SizedBox(
-
             height: 46,
 
-            child:
-                OutlinedButton(
+            child: OutlinedButton(
+              onPressed: _actionLoading ? null : _cancel,
 
-              onPressed:
-                  _actionLoading
-                      ? null
-                      : _cancel,
-
-              style:
-                  OutlinedButton
-                      .styleFrom(
-                foregroundColor:
-                    Colors
-                        .redAccent,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.redAccent,
               ),
 
-              child:
-                  const Text(
-                'Cancel Booking',
-              ),
+              child: const Text('Cancel Booking'),
             ),
           ),
         ],
 
         if (canDelete) ...[
-
-          const SizedBox(
-            height: 10,
-          ),
+          const SizedBox(height: 10),
 
           SizedBox(
-
             height: 46,
 
-            child:
-                OutlinedButton
-                    .icon(
+            child: OutlinedButton.icon(
+              onPressed: _actionLoading ? null : _delete,
 
-              onPressed:
-                  _actionLoading
-                      ? null
-                      : _delete,
+              icon: const Icon(Icons.delete_outline),
 
-              icon:
-                  const Icon(
-                Icons
-                    .delete_outline,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.redAccent,
               ),
 
-              style:
-                  OutlinedButton
-                      .styleFrom(
-                foregroundColor:
-                    Colors
-                        .redAccent,
-              ),
-
-              label:
-                  const Text(
-                'Remove Cancelled Booking',
-              ),
+              label: const Text('Remove Cancelled Booking'),
             ),
           ),
         ],
 
         if (_actionLoading) ...[
+          const SizedBox(height: 18),
 
-          const SizedBox(
-            height: 18,
-          ),
-
-          const Center(
-            child:
-                CircularProgressIndicator(
-              color:
-                  _green,
-            ),
-          ),
+          const Center(child: CircularProgressIndicator(color: _green)),
         ],
       ],
     );
   }
 
-  Widget _message({
+  DateTime _bookingStart(SeatBookingRecord booking) {
+    final date = DateTime.tryParse(booking.bookingDate);
+    DateTime? time;
+    try {
+      time = DateFormat('HH:mm:ss').parse(booking.startTime);
+    } catch (_) {
+      time = null;
+    }
+    if (date == null || time == null) {
+      return DateTime.fromMillisecondsSinceEpoch(0);
+    }
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+      time.second,
+    );
+  }
 
+  Widget _message({
     required IconData icon,
 
     required String text,
 
     required Color color,
-
   }) {
-
     return Container(
+      padding: const EdgeInsets.all(14),
 
-      padding:
-          const EdgeInsets
-              .all(
-        14,
-      ),
+      decoration: BoxDecoration(
+        color: color,
 
-      decoration:
-          BoxDecoration(
-
-        color:
-            color,
-
-        borderRadius:
-            BorderRadius
-                .circular(
-          14,
-        ),
+        borderRadius: BorderRadius.circular(14),
       ),
 
       child: Row(
-
-        crossAxisAlignment:
-            CrossAxisAlignment
-                .start,
+        crossAxisAlignment: CrossAxisAlignment.start,
 
         children: [
+          Icon(icon, color: _green),
 
-          Icon(
-            icon,
-            color:
-                _green,
-          ),
-
-          const SizedBox(
-            width: 10,
-          ),
+          const SizedBox(width: 10),
 
           Expanded(
             child: Text(
               text,
-              style:
-                  const TextStyle(
-                color:
-                    Color(
-                  0xFF31545C,
-                ),
-                fontSize:
-                    11,
-                height:
-                    1.4,
+              style: const TextStyle(
+                color: Color(0xFF31545C),
+                fontSize: 11,
+                height: 1.4,
               ),
             ),
           ),
@@ -1198,59 +638,28 @@ class _ActiveBookingScreenState
     );
   }
 
-  Widget _row(
-    IconData icon,
-    String title,
-    String value,
-  ) {
-
+  Widget _row(IconData icon, String title, String value) {
     return Row(
       children: [
+        Icon(icon, color: _green, size: 20),
 
-        Icon(
-          icon,
-          color:
-              _green,
-          size:
-              20,
-        ),
-
-        const SizedBox(
-          width: 12,
-        ),
+        const SizedBox(width: 12),
 
         Expanded(
           child: Text(
             title,
-            style:
-                const TextStyle(
-              color:
-                  Color(
-                0xFF809094,
-              ),
-              fontSize:
-                  11,
-            ),
+            style: const TextStyle(color: Color(0xFF809094), fontSize: 11),
           ),
         ),
 
         Flexible(
           child: Text(
             value,
-            textAlign:
-                TextAlign
-                    .right,
-            style:
-                const TextStyle(
-              color:
-                  Color(
-                0xFF173B46,
-              ),
-              fontWeight:
-                  FontWeight
-                      .w600,
-              fontSize:
-                  11,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: Color(0xFF173B46),
+              fontWeight: FontWeight.w600,
+              fontSize: 11,
             ),
           ),
         ),

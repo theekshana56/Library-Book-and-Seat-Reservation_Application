@@ -112,7 +112,7 @@ class BookingSuccessScreen
                   .check_circle,
               color:
                   Color(
-                0xFF008C72,
+                0xFF005F4B,
               ),
               size:
                   82,
@@ -211,7 +211,7 @@ class BookingSuccessScreen
 
                       color:
                           const Color(
-                        0xFF008C72,
+                        0xFF005F4B,
                       ),
 
                       borderRadius:
@@ -390,7 +390,7 @@ class BookingSuccessScreen
 
                   backgroundColor:
                       const Color(
-                    0xFF008C72,
+                    0xFF005F4B,
                   ),
 
                   shape:
