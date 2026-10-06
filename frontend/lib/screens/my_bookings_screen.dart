@@ -326,13 +326,14 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
 
   Widget _reservationCard(Reservation r) {
     final deadline = _reservationManagementDeadline(r);
+    final holdRemaining = deadline.difference(DateTime.now());
+    final loan = _data?.loans
+        .where((candidate) => candidate.bookId == r.bookId)
+        .cast<Loan?>()
+        .firstWhere((candidate) => candidate != null, orElse: () => null);
     final canManage =
         DateTime.now().isBefore(deadline) &&
         (r.status == 'READY_FOR_PICKUP' || r.status == 'CONFIRMED');
-    final remaining = deadline.difference(DateTime.now());
-    final windowLabel = canManage
-        ? 'Hold expires in ${remaining.inHours}h ${remaining.inMinutes.remainder(60)}m'
-        : 'Hold expired';
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(14),
@@ -352,62 +353,45 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           Row(
             children: [
               const StatusPill(label: 'Ready for Pickup'),
-              const Spacer(),
-              const Icon(
-                Icons.hourglass_bottom,
-                size: 16,
-                color: Color(0xFFC2410C),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _bookingTimeInfo(
+                  icon: Icons.hourglass_bottom_rounded,
+                  label: 'Book hold time',
+                  value: holdRemaining.isNegative
+                      ? 'Hold expired'
+                      : '${_formatDuration(holdRemaining)} remaining',
+                  color: holdRemaining.isNegative
+                      ? const Color(0xFFB42318)
+                      : const Color(0xFFC2410C),
+                ),
               ),
-              const SizedBox(width: 4),
-              Text(
-                windowLabel,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFFC2410C),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _bookingTimeInfo(
+                  icon: Icons.calendar_month_outlined,
+                  label: 'Loan period',
+                  value: '${r.loanPeriodDays} days',
+                  color: AppColors.emerald,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: canManage
-                  ? const Color(0xFFFFF4E5)
-                  : const Color(0xFFF1F3F5),
-              borderRadius: BorderRadius.circular(12),
+          if (loan != null) ...[
+            const SizedBox(height: 8),
+            _bookingTimeInfo(
+              icon: Icons.assignment_return_outlined,
+              label: 'Return countdown',
+              value: _loanCountdownLabel(loan),
+              color: loan.dueDate.isBefore(DateTime.now())
+                  ? const Color(0xFFB42318)
+                  : AppColors.mintText,
             ),
-            child: Row(
-              children: [
-                Icon(
-                  canManage
-                      ? Icons.hourglass_bottom_rounded
-                      : Icons.hourglass_disabled_rounded,
-                  size: 18,
-                  color: canManage
-                      ? const Color(0xFFC2410C)
-                      : AppColors.textMuted,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    canManage
-                        ? 'Book hold countdown: ${_countdownLabel(remaining)} remaining'
-                        : 'Book hold countdown finished',
-                    style: GoogleFonts.plusJakartaSans(
-                      color: canManage
-                          ? const Color(0xFFC2410C)
-                          : AppColors.textMuted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          ],
           const SizedBox(height: 12),
           Row(
             children: [
@@ -560,6 +544,64 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         ],
       ),
     );
+  }
+
+  Widget _bookingTimeInfo({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 17, color: color),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 10,
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    color: color,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDuration(Duration duration) {
+    final safeDuration = duration.isNegative ? Duration.zero : duration;
+    final days = safeDuration.inDays;
+    final hours = safeDuration.inHours.remainder(24);
+    final minutes = safeDuration.inMinutes.remainder(60);
+    return '${days}d ${hours}h ${minutes}m';
+  }
+
+  String _loanCountdownLabel(Loan loan) {
+    final remaining = loan.dueDate.difference(DateTime.now());
+    final countdown = _formatDuration(remaining);
+    return remaining.isNegative ? 'Overdue by $countdown' : '$countdown remaining';
   }
 
   DateTime _reservationManagementDeadline(Reservation reservation) {
@@ -1149,14 +1191,6 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
 
   String _formatDateTime(DateTime value) {
     return DateFormat('EEE, d MMM · h:mm a').format(value);
-  }
-
-  String _countdownLabel(Duration duration) {
-    final safeDuration = duration.isNegative ? Duration.zero : duration;
-    final days = safeDuration.inDays;
-    final hours = safeDuration.inHours.remainder(24);
-    final minutes = safeDuration.inMinutes.remainder(60);
-    return '${days}d ${hours}h ${minutes}m';
   }
 
   Widget _loanCard(Loan loan) {

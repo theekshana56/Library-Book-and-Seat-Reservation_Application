@@ -78,7 +78,7 @@ class _BiblioneShellState extends State<BiblioneShell> {
           userId: bookingsUserId,
           onBack: () => _selectTab(0),
         ),
-        2 => const SearchCatalogScreen(),
+        2 => SearchCatalogScreen(userProfile: currentUser),
         3 => MyBookingsScreen(
           userId: bookingsUserId,
           alternateUserId: currentUser?.id,
