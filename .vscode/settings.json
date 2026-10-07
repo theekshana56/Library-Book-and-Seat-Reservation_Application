@@ -1,3 +1,12 @@
 {
-    "cmake.sourceDirectory": "D:/HCI APP DeV/Library-Book-and-Seat-Reservation_Application/frontend/windows"
+  "cmake.sourceDirectory": "D:/HCI APP DeV/Library-Book-and-Seat-Reservation_Application/frontend/windows",
+  "task.allowAutomaticTasks": true,
+  "debug.openDebug": "neverOpen",
+  "terminal.integrated.inheritEnv": false,
+  "tasks": {
+    "label": "lint on open",
+    "type": "shell",
+    "command": "npm run lint",
+    "runOn": "folderOpen"
+  }
 }
