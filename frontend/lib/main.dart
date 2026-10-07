@@ -78,8 +78,11 @@ class _BiblioneShellState extends State<BiblioneShell> {
           userId: bookingsUserId,
           onBack: () => _selectTab(0),
         ),
-        2 => const SearchCatalogScreen(),
-        3 => MyBookingsScreen(userId: bookingsUserId),
+        2 => SearchCatalogScreen(userProfile: currentUser),
+        3 => MyBookingsScreen(
+          userId: bookingsUserId,
+          alternateUserId: currentUser?.id,
+        ),
         4 when widget.authController != null =>
           ProfileScreen(authController: widget.authController!),
         _ => _PlaceholderPage(

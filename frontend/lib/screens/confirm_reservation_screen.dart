@@ -13,26 +13,34 @@ class ConfirmReservationScreen extends StatefulWidget {
   const ConfirmReservationScreen({super.key, required this.book});
 
   @override
-  State<ConfirmReservationScreen> createState() => _ConfirmReservationScreenState();
+  State<ConfirmReservationScreen> createState() =>
+      _ConfirmReservationScreenState();
 }
 
 class _ConfirmReservationScreenState extends State<ConfirmReservationScreen> {
   final _api = ApiClient();
   bool _notify = true;
   bool _submitting = false;
+  int _loanPeriodDays = 14;
 
   Future<void> _confirm() async {
     setState(() => _submitting = true);
     try {
-      final reservation = await _api.reserveBook(widget.book.id);
+      final reservation = await _api.reserveBook(
+        widget.book.id,
+        loanPeriodDays: _loanPeriodDays,
+      );
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => ReservationReceiptScreen(reservation: reservation)),
+        MaterialPageRoute(
+          builder: (_) => ReservationReceiptScreen(reservation: reservation),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
       setState(() => _submitting = false);
     }
   }
@@ -56,8 +64,13 @@ class _ConfirmReservationScreenState extends State<ConfirmReservationScreen> {
                 border: Border.all(color: const Color(0xFFD5DEE8)),
                 color: Colors.white,
               ),
-              child: Text('2/2',
-                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 12)),
+              child: Text(
+                '2/2',
+                style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                ),
+              ),
             ),
           ),
           Expanded(
@@ -79,12 +92,20 @@ class _ConfirmReservationScreenState extends State<ConfirmReservationScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Pickup Hold Policy',
-                                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
+                            Text(
+                              'Pickup Hold Policy',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                             const SizedBox(height: 4),
                             Text(
                               'Physical copies are kept at the circulation desk for 24 hours once confirmed ready.',
-                              style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textMuted, height: 1.35),
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 13,
+                                color: AppColors.textMuted,
+                                height: 1.35,
+                              ),
                             ),
                           ],
                         ),
@@ -95,7 +116,10 @@ class _ConfirmReservationScreenState extends State<ConfirmReservationScreen> {
                 const SizedBox(height: 14),
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: Row(
                     children: [
                       BookCover(url: book.coverImageUrl, width: 54, height: 74),
@@ -106,11 +130,24 @@ class _ConfirmReservationScreenState extends State<ConfirmReservationScreen> {
                           children: [
                             const StatusPill(label: 'Ready for Staging'),
                             const SizedBox(height: 6),
-                            Text(book.title, style: AppTheme.serifTitle.copyWith(fontSize: 18)),
-                            Text(book.author,
-                                style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textMuted)),
-                            Text("O'Reilly Media • 1st Ed. ${book.year == 0 ? 2017 : book.year}",
-                                style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted)),
+                            Text(
+                              book.title,
+                              style: AppTheme.serifTitle.copyWith(fontSize: 18),
+                            ),
+                            Text(
+                              book.author,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                            Text(
+                              "O'Reilly Media • 1st Ed. ${book.year == 0 ? 2017 : book.year}",
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -120,58 +157,140 @@ class _ConfirmReservationScreenState extends State<ConfirmReservationScreen> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.location_on_outlined, size: 16, color: AppColors.emerald),
+                    const Icon(
+                      Icons.location_on_outlined,
+                      size: 16,
+                      color: AppColors.emerald,
+                    ),
                     const SizedBox(width: 4),
-                    Text('Shelf ${book.shelfCode} • ${book.shelfDetail}',
-                        style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600)),
+                    Text(
+                      'Shelf ${book.shelfCode} • ${book.shelfDetail}',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Text('Hold Specifications',
-                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 16)),
+                    Text(
+                      'Hold Specifications',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
+                    ),
                     const Spacer(),
-                    Text('AUTOMATED DISPATCH',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.mintText,
-                          letterSpacing: 0.6,
-                        )),
+                    Text(
+                      'AUTOMATED DISPATCH',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.mintText,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                   child: Column(
                     children: [
-                      _row(Icons.location_on_outlined, 'DESIGNATED PICKUP DESK',
-                          book.pickupDesk, book.pickupDeskDetail),
+                      _row(
+                        Icons.location_on_outlined,
+                        'DESIGNATED PICKUP DESK',
+                        book.pickupDesk,
+                        book.pickupDeskDetail,
+                      ),
                       const Divider(height: 22),
                       Row(
                         children: [
-                          Expanded(child: _mini(Icons.schedule, 'Hold Window', '24 Hours', 'Post desk arrival')),
-                          const SizedBox(width: 10),
-                          Expanded(child: _mini(Icons.event_available_outlined, 'Loan Duration', '${book.loanPeriodDays} Days', 'Standard student tier')),
+                          Expanded(
+                            child: _mini(
+                              Icons.schedule,
+                              'Hold Window',
+                              '24 Hours',
+                              'Post desk arrival',
+                            ),
+                          ),
                         ],
                       ),
                       const Divider(height: 22),
-                      _row(Icons.badge_outlined, 'Borrower ID', 'RW - 20248839', 'CS Dept', trailingChip: true),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.event_available_outlined,
+                            color: AppColors.emerald,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Loan period',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          DropdownButton<int>(
+                            value: _loanPeriodDays,
+                            items: [
+                              for (var days = 3; days <= 14; days++)
+                                DropdownMenuItem(
+                                  value: days,
+                                  child: Text('$days days'),
+                                ),
+                            ],
+                            onChanged: _submitting
+                                ? null
+                                : (value) {
+                                    if (value != null) {
+                                      setState(() => _loanPeriodDays = value);
+                                    }
+                                  },
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 22),
+                      _row(
+                        Icons.badge_outlined,
+                        'Borrower ID',
+                        'RW - 20248839',
+                        'CS Dept',
+                        trailingChip: true,
+                      ),
                       const Divider(height: 22),
                       Row(
                         children: [
-                          const Icon(Icons.notifications_none_rounded, color: AppColors.emerald),
+                          const Icon(
+                            Icons.notifications_none_rounded,
+                            color: AppColors.emerald,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Ready Notification',
-                                    style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w700)),
-                                Text('Email & Push Alert',
-                                    style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
+                                Text(
+                                  'Ready Notification',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 11,
+                                    color: AppColors.textMuted,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                Text(
+                                  'Email & Push Alert',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -190,19 +309,29 @@ class _ConfirmReservationScreenState extends State<ConfirmReservationScreen> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706), size: 18),
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Color(0xFFD97706),
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Uncollected books after 24h are returned to open circulation and hold priority is transferred to the next waitlisted student.',
-                        style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textMuted, height: 1.4),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                          height: 1.4,
+                        ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 18),
                 PrimaryButton(
-                  label: _submitting ? 'Placing hold...' : 'Confirm & Place Hold',
+                  label: _submitting
+                      ? 'Placing hold...'
+                      : 'Confirm & Place Hold',
                   trailing: Icons.arrow_forward_rounded,
                   onPressed: _submitting ? null : _confirm,
                 ),
@@ -210,7 +339,8 @@ class _ConfirmReservationScreenState extends State<ConfirmReservationScreen> {
                 SoftButton(
                   label: 'Cancel & Return to Search',
                   icon: Icons.close,
-                  onPressed: () => Navigator.popUntil(context, (r) => r.isFirst),
+                  onPressed: () =>
+                      Navigator.popUntil(context, (r) => r.isFirst),
                 ),
               ],
             ),
@@ -220,7 +350,13 @@ class _ConfirmReservationScreenState extends State<ConfirmReservationScreen> {
     );
   }
 
-  Widget _row(IconData icon, String label, String title, String subtitle, {bool trailingChip = false}) {
+  Widget _row(
+    IconData icon,
+    String label,
+    String title,
+    String subtitle, {
+    bool trailingChip = false,
+  }) {
     return Row(
       children: [
         Icon(icon, color: AppColors.emerald),
@@ -229,23 +365,43 @@ class _ConfirmReservationScreenState extends State<ConfirmReservationScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textMuted,
-                    letterSpacing: 0.5,
-                  )),
-              Text(title, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
-              Text(subtitle, style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textMuted)),
+              Text(
+                label,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textMuted,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              Text(
+                title,
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+              ),
+              Text(
+                subtitle,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  color: AppColors.textMuted,
+                ),
+              ),
             ],
           ),
         ),
         if (trailingChip)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(color: AppColors.ice, borderRadius: BorderRadius.circular(20)),
-            child: Text('CS Dept', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 11)),
+            decoration: BoxDecoration(
+              color: AppColors.ice,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'CS Dept',
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w800,
+                fontSize: 11,
+              ),
+            ),
           ),
       ],
     );
@@ -254,15 +410,34 @@ class _ConfirmReservationScreenState extends State<ConfirmReservationScreen> {
   Widget _mini(IconData icon, String label, String title, String subtitle) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: AppColors.pageBg, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(
+        color: AppColors.pageBg,
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 18, color: AppColors.emerald),
           const SizedBox(height: 6),
-          Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w700)),
-          Text(title, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
-          Text(subtitle, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted)),
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 11,
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          Text(
+            title,
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+          ),
+          Text(
+            subtitle,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 11,
+              color: AppColors.textMuted,
+            ),
+          ),
         ],
       ),
     );

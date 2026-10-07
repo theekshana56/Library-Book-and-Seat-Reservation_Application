@@ -10,7 +10,14 @@ class SeatMapScreen
 
   const SeatMapScreen({
     super.key,
+    this.initialDate,
+    this.initialStart,
+    this.initialEnd,
   });
+
+  final DateTime? initialDate;
+  final TimeOfDay? initialStart;
+  final TimeOfDay? initialEnd;
 
   @override
   State<SeatMapScreen>
@@ -25,7 +32,7 @@ class _SeatMapScreenState
       Color(0xFF073342);
 
   static const _green =
-      Color(0xFF008C72);
+      Color(0xFF005F4B);
 
   static const _page =
       Color(0xFFF8FAFA);
@@ -64,7 +71,7 @@ class _SeatMapScreenState
     final now =
         DateTime.now();
 
-    _date =
+    _date = widget.initialDate ??
         DateTime(
           now.year,
           now.month,
@@ -74,6 +81,13 @@ class _SeatMapScreenState
             days: 1,
           ),
         );
+
+    if (widget.initialStart != null) {
+      _start = widget.initialStart!;
+    }
+    if (widget.initialEnd != null) {
+      _end = widget.initialEnd!;
+    }
 
     _loadSeats();
   }

@@ -39,7 +39,7 @@ class _ReviewBookingScreenState
     > {
 
   static const _green =
-      Color(0xFF008C72);
+      Color(0xFF005F4B);
 
   final SeatBookingApi _api =
       SeatBookingApi();

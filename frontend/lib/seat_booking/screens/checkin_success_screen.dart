@@ -70,7 +70,7 @@ class CheckinSuccessScreen extends StatelessWidget {
                 ),
                 child: const Icon(
                   Icons.check_circle,
-                  color: Color(0xFF008C72),
+                  color: Color(0xFF005F4B),
                   size: 62,
                 ),
               ),
@@ -118,7 +118,7 @@ class CheckinSuccessScreen extends StatelessWidget {
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color:
-                        const Color(0xFF008C72),
+                        const Color(0xFF005F4B),
                         borderRadius:
                         BorderRadius.circular(14),
                       ),
@@ -212,7 +212,7 @@ class CheckinSuccessScreen extends StatelessWidget {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
-                    const Color(0xFF008C72),
+                    const Color(0xFF005F4B),
                     foregroundColor:
                     Colors.white,
                     shape: RoundedRectangleBorder(

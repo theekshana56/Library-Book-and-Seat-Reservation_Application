@@ -503,7 +503,7 @@ class _QRScannerScreenState
 
                       color:
                           const Color(
-                        0xFF008C72,
+                        0xFF005F4B,
                       ),
 
                       borderRadius:
