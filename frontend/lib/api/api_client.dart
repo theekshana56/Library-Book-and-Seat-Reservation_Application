@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../models/book.dart';
 import '../models/models.dart';
 import '../user_management/services/auth_storage.dart';
+import '../user_management/models/user_profile.dart';
 import '../models/seat_booking.dart';
 
 class ApiException implements Exception {
@@ -142,14 +143,21 @@ class ApiClient {
     return body;
   }
 
-  Future<Reservation> reserveBook(String bookId) async {
+  Future<Reservation> reserveBook(
+    String bookId, {
+    required int loanPeriodDays,
+  }) async {
     String currentUserId = demoUserId;
+    UserProfile? user;
     try {
-      final user = await AuthStorage().getUser();
-      if (user != null &&
-          user.universityId != null &&
-          user.universityId!.isNotEmpty) {
-        currentUserId = user.universityId!;
+      user = await AuthStorage().getUser();
+      if (user != null) {
+        final universityId = user.universityId?.trim();
+        if (universityId != null && universityId.isNotEmpty) {
+          currentUserId = universityId;
+        } else if (user.id.trim().isNotEmpty) {
+          currentUserId = user.id.trim();
+        }
       }
     } catch (_) {}
 
@@ -159,9 +167,12 @@ class ApiClient {
       body: jsonEncode({
         'userId': currentUserId,
         'bookId': bookId,
-        'borrowerLabel': 'RW - 20248839',
-        'studentCardId': '2024-9182',
-        'department': 'CS Dept',
+        'borrowerLabel': user?.fullName.trim(),
+        'studentCardId': user?.universityId?.trim().isNotEmpty == true
+            ? user!.universityId!.trim()
+            : currentUserId,
+        'department': user?.department?.trim(),
+        'loanPeriodDays': loanPeriodDays,
       }),
     );
     _ensureOk(res);

@@ -151,7 +151,7 @@ class QRErrorScreen extends StatelessWidget {
                 height: 50,
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF008C72),
+                    backgroundColor: const Color(0xFF005F4B),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
