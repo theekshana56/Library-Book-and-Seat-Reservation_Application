@@ -14,6 +14,7 @@ import '../seat_booking/screens/qr_scanner_screen.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ui_kit.dart';
+import '../seat_booking/widgets/integrated_seat_hold_card.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   final String? userId;
@@ -780,149 +781,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   }
 
   Widget _seatCard(SeatHold s) {
-    final remaining = s.checkInBy.difference(DateTime.now());
-    final mins = remaining.isNegative ? 0 : remaining.inMinutes;
-    final secs = remaining.isNegative ? 0 : remaining.inSeconds.remainder(60);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const StatusPill(label: 'Confirmed Hold'),
-              const Spacer(),
-              const Icon(
-                Icons.timer_outlined,
-                size: 16,
-                color: AppColors.checkedText,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '$mins:${secs.toString().padLeft(2, '0')} mins to check in',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.checkedText,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: AppColors.cyanAlert,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(Icons.event_seat, color: AppColors.emerald),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${s.seatName}  Silent Pod',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                      ),
-                    ),
-                    Text(
-                      s.zone,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                children: [
-                  Text(
-                    'SEAT CODE',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 9,
-                      color: AppColors.textMuted,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  Text(
-                    '#${s.seatCode}',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                      color: AppColors.emerald,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Text(
-                'Reserved Slot\n${s.slotLabel}',
-                style: GoogleFonts.plusJakartaSans(fontSize: 12, height: 1.3),
-              ),
-              const Spacer(),
-              ...s.amenities.map(
-                (a) => Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Icon(
-                    a == 'power'
-                        ? Icons.power_outlined
-                        : a == 'wifi'
-                        ? Icons.wifi
-                        : Icons.volume_off_outlined,
-                    size: 18,
-                    color: AppColors.checkedText,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.qr_code_scanner, size: 18),
-                  label: const Text('Check In via Scanner'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.navy,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              SoftButton(
-                label: 'Modify',
-                icon: Icons.edit_calendar_outlined,
-                expanded: false,
-                onPressed: () {},
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  return IntegratedSeatHoldCard(
+    seatHold: s,
+    onChanged: _load,
+  );
+}
 
   Widget _seatBookingCard(SeatBooking booking) {
     final status = booking.status.replaceAll('_', ' ');
