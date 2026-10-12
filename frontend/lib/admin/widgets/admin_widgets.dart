@@ -160,32 +160,35 @@ class AdminField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
-    controller: controller,
-    keyboardType: keyboardType,
-    maxLines: obscureText ? 1 : maxLines,
-    obscureText: obscureText,
-    readOnly: readOnly,
-    validator: validator,
-    decoration: InputDecoration(
-      labelText: label,
-      hintText: hint,
-      filled: true,
-      fillColor: const Color(0xFFF8FAFC),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFDCE4EB)),
+      controller: controller,
+      keyboardType: keyboardType,
+      maxLines: obscureText ? 1 : maxLines,
+      obscureText: obscureText,
+      readOnly: readOnly,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFDCE4EB)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFDCE4EB)),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 13,
+        ),
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFDCE4EB)),
+      style: GoogleFonts.plusJakartaSans(
+        fontSize: 13,
+        color: AppColors.textPrimary,
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-    ),
-    style: GoogleFonts.plusJakartaSans(
-      fontSize: 13,
-      color: AppColors.textPrimary,
-    ),
-  );
+    );
   }
 }
 
@@ -281,6 +284,46 @@ class AdminMetricTile extends StatelessWidget {
             ],
           ),
         ),
+      ],
+    ),
+  );
+}
+
+class AdminChartCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final Widget child;
+
+  const AdminChartCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) => AdminCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          subtitle,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 10,
+            color: AppColors.textMuted,
+          ),
+        ),
+        const SizedBox(height: 16),
+        child,
       ],
     ),
   );

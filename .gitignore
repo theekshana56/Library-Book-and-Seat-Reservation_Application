@@ -136,3 +136,5 @@ backend/target/maven-status/maven-compiler-plugin/testCompile/default-testCompil
 backend/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/inputFiles.lst
 .idea/
 backend/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst
+config.bat
+node_modules
