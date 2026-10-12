@@ -6,10 +6,14 @@ import '../../api/api_client.dart';
 import '../models/seat_recommendation.dart';
 
 class SeatRecommenderApi {
+  final http.Client _client;
+
+  SeatRecommenderApi({http.Client? client}) : _client = client ?? http.Client();
+
   Future<SeatRecommendationResponse> recommend(
     SeatSearchRequest request,
   ) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('${ApiClient.baseUrl}/api/v1/seats/recommend'),
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode(request.toJson()),

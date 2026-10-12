@@ -43,18 +43,21 @@ class SeatRecommenderServiceTest {
                 .hasPowerOutlet(true).acousticsDb(24).features(List.of()).build();
         Seat occupiedDuringSearch = Seat.builder().seatCode("A05").zone("Quiet Zone")
                 .hasPowerOutlet(true).acousticsDb(22).features(List.of()).build();
+        LocalDateTime validStart = LocalDateTime.now().plusHours(3);
         when(seatRepository.findAll()).thenReturn(List.of(exact, closest, held, availableLater, occupiedDuringSearch));
         when(seatHoldRepository.findByStatusIn(List.of("CONFIRMED", "CHECKED_IN")))
                 .thenReturn(List.of(
                         SeatHold.builder().seatCode("a03").status("CONFIRMED").build(),
                         SeatHold.builder().seatCode("A04").status("CONFIRMED")
-                                .date(LocalDate.now()).startTime(LocalTime.of(13, 0)).durationMinutes(60).build(),
+                                .date(validStart.toLocalDate()).startTime(validStart.toLocalTime().minusHours(3))
+                                .durationMinutes(60).build(),
                         SeatHold.builder().seatCode("A05").status("CONFIRMED")
-                                .date(LocalDate.now()).startTime(LocalTime.of(11, 0)).durationMinutes(30).build()));
+                                .date(validStart.toLocalDate()).startTime(validStart.toLocalTime().minusMinutes(30))
+                                .durationMinutes(60).build()));
 
         SeatSearchRequest request = new SeatSearchRequest();
-        request.setDate(LocalDate.now());
-        request.setStartTime(LocalTime.of(10, 0));
+        request.setDate(validStart.toLocalDate());
+        request.setStartTime(validStart.toLocalTime());
         request.setDurationMinutes(150);
         request.setZonePreference("Quiet Zone");
         request.setPowerRequired(true);
